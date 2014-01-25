@@ -122,6 +122,9 @@ func main() {
 	enc := gob.NewEncoder(conn)
 	dec := gob.NewDecoder(conn)
 
+	renderData := LoadRenderData()
+	clientGame, _ := game.NewGame()
+
 	for running {
 		for _, event := range PollEvents() {
 			switch e := event.(type) {
@@ -187,6 +190,8 @@ func main() {
 				data[player] = append(data[player], action)
 			}
 		}
+
+		RenderMap(renderData, clientGame)
 
 		// TODO
 		selfPlayer := game.Player(0)

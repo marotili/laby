@@ -73,6 +73,18 @@ type MapPosition struct {
 	y int
 }
 
+func NewMapPosition(x int, y int) MapPosition {
+	return MapPosition{x: x, y: y}
+}
+
+func (pos MapPosition) X() int {
+	return pos.x
+}
+
+func (pos MapPosition) Y() int {
+	return pos.y
+}
+
 func (mp MapPosition) Neighbor(direction Direction) MapPosition {
 	switch direction {
 	case DirNorth:
@@ -451,6 +463,18 @@ func (g *Game) PosEmptyInFuture(pos MapPosition) bool {
 	return true
 }
 
+func (g *Game) Width() int {
+	return len(g.gameMap.cells[0])
+}
+
+func (g *Game) Height() int {
+	return len(g.gameMap.cells)
+}
+
+func (g *Game) Cell(pos MapPosition) *Cell {
+	return g.gameMap.Cell(pos)
+}
+
 type Game struct {
 	players []Player
 	gameMap *Map
@@ -679,6 +703,7 @@ func NewGame() (*Game, error) {
 		bannWalls: make(map[MapPosition]*BannWall),
 
 		playerCans: make(map[Player]*PlayerCans),
+		playerVis:  make(map[Player]*PlayerVis),
 
 		playerMoveTransition: make(map[Player]MoveableTransition),
 		boulderTransition:    make(map[*Boulder]MoveableTransition),
@@ -690,9 +715,9 @@ func NewGame() (*Game, error) {
 		music:   nil,
 	}
 
-	if r.music = mixer.LoadMUS("data/music.ogg"); r.music == nil {
-		return nil, errors.New(sdl.GetError())
-	}
+	// if r.music = mixer.LoadMUS("data/music.ogg"); r.music == nil {
+	// 	return nil, errors.New(sdl.GetError())
+	// }
 
 	// if r.font = ttf.OpenFont("data/font.otf", 32); r.font == nil {
 	// return nil, errors.New(sdl.GetError())

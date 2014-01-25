@@ -40,9 +40,23 @@ type Player struct {
 	gamePlayer game.Player
 }
 
+func NewPlayer(conn net.Conn, gamePlayer game.Player) *Player {
+	return &Player{
+		conn:       conn,
+		gamePlayer: gamePlayer,
+	}
+}
+
 type PerPlayerState struct {
 	newActions []game.ActionType
 	isReady    bool
+}
+
+func NewPlayerState() *PerPlayerState {
+	return &PerPlayerState{
+		newActions: make([]game.ActionType, 0),
+		isReady:    false,
+	}
 }
 
 func PlayerIsSynchronized(player *Player) bool {
@@ -53,6 +67,13 @@ func PlayerIsSynchronized(player *Player) bool {
 	}
 
 	return false
+}
+
+func SetPlayerSynchronized(player *Player) {
+	gameState.dataLock.Lock()
+	defer gameState.dataLock.Unlock()
+
+	gameState.playerData[player].newActions = make([]game.ActionType, 0)
 }
 
 func OtherPlayers(player *Player) []*Player {
@@ -111,8 +132,20 @@ func StartGame() {
 	gameState.gameStarted = true
 }
 
+func GameAddPlayer(conn net.Conn) *Player {
+	gameState.dataLock.Lock()
+	defer gameState.dataLock.Unlock()
+
+	playerId := len(gameState.playerData)
+	gamePlayer := gameState.game.NewPlayer(playerId)
+	newPlayer := NewPlayer(conn, gamePlayer)
+
+	gameState.playerData[newPlayer] = NewPlayerState()
+	return newPlayer
+}
+
 func handleConnection(conn net.Conn) {
-	player := &Player{conn: conn, gamePlayer: 0}
+	player := GameAddPlayer(conn)
 	defer func() {
 	}()
 
@@ -121,11 +154,13 @@ func handleConnection(conn net.Conn) {
 
 	var req game.ClientRequest
 	for {
+		log.Println("Wait for request")
 		err := dec.Decode(&req)
 		if err != nil {
 			log.Fatal("Failed to decode client req")
 		}
 
+		log.Println("Got request", req)
 		switch req {
 		case game.ClientReqSendAction:
 			var actions []game.ActionType = make([]game.ActionType, 0, 100)
@@ -146,23 +181,32 @@ func handleConnection(conn net.Conn) {
 				actions = append(actions, action)
 			}
 
+			actionDenied := false
 			if PlayerIsSynchronized(player) {
+				log.Println(actions)
 				for _, action := range actions {
 					if action == game.ActionPlayerReady {
 						if gameState.gameStarted {
-							enc.Encode(game.ServerActionDenied)
+							actionDenied = true
 						} else {
 							SetPlayerReady(player)
 						}
 					}
 				}
 
-				// Test game state
-				copyActions := make([]game.ActionType, len(actions))
-				copy(copyActions, actions)
-				AddNewActions(player, copyActions)
-				enc.Encode(game.ServerActionOk)
+				if actionDenied {
+					log.Println("Action denied from player", player)
+					enc.Encode(game.ServerActionDenied)
+				} else {
+					// Test game state
+					copyActions := make([]game.ActionType, len(actions))
+					copy(copyActions, actions)
+					AddNewActions(player, copyActions)
+					log.Println("Action ok from player", player)
+					enc.Encode(game.ServerActionOk)
+				}
 			} else {
+				log.Println("Player not synchronized")
 				enc.Encode(game.ServerActionWait)
 				// ignore
 			}
@@ -177,6 +221,8 @@ func handleConnection(conn net.Conn) {
 					enc.Encode(action)
 				}
 			}
+
+			SetPlayerSynchronized(player)
 		default:
 			log.Println("Unknown command from client")
 		}
@@ -193,6 +239,8 @@ func handleConnection(conn net.Conn) {
 
 func main() {
 	var err error
+
+	InitGame()
 
 	// if game, err = NewGame(); err != nil {
 	// 	log.Fatal(err)
