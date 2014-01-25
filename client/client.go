@@ -119,7 +119,6 @@ func main() {
 	running := true
 	last := time.Now()
 
-	is := game.NewInputState()
 	enc := gob.NewEncoder(conn)
 	dec := gob.NewDecoder(conn)
 
@@ -131,6 +130,8 @@ func main() {
 	clientGame, _ := game.NewGame()
 	// get player id from server
 	clientGame.NewPlayer(int(player))
+
+	is := game.NewInputState(clientGame, player)
 
 	gameStarted := false
 

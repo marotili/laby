@@ -53,6 +53,32 @@ type CfgRoomData struct {
 	cells []MapPosition
 }
 
+type CfgBoulderData struct {
+	id  BoulderID
+	pos MapPosition
+}
+
+type CfgBannWallData struct {
+	id           BannWallID
+	pos          MapPosition
+	bannWallType int
+}
+
+func NewCfgBannWallData(id BannWallID, pos MapPosition, bannWallType int) CfgBannWallData {
+	return CfgBannWallData{
+		id:           id,
+		pos:          pos,
+		bannWallType: bannWallType,
+	}
+}
+
+func NewCfgBoulderData(id BoulderID, pos MapPosition) CfgBoulderData {
+	return CfgBoulderData{
+		id:  id,
+		pos: pos,
+	}
+}
+
 func NewCfgTriggerData(id TriggerID, door DoorID, bannWall BannWallID, pos MapPosition, dir Direction) CfgTriggerData {
 	return CfgTriggerData{
 		id:             id,
@@ -90,15 +116,20 @@ func NewCfgRoomData(id RoomID, cells []MapPosition) CfgRoomData {
 type MapConfig struct {
 	playerStartPos  []MapPosition
 	playerStartLook []Direction
-	walkTime        time.Duration
-	walls           []MapPosition
-	mapWidth        int
-	mapHeight       int
 
-	triggerData []CfgTriggerData
-	plateData   []CfgPlateData
-	doorData    []CfgDoorData
-	roomData    []CfgRoomData
+	walkTime time.Duration
+	rollTime time.Duration
+
+	walls     []MapPosition
+	mapWidth  int
+	mapHeight int
+
+	triggerData  []CfgTriggerData
+	plateData    []CfgPlateData
+	doorData     []CfgDoorData
+	roomData     []CfgRoomData
+	boulderData  []CfgBoulderData
+	bannWallData []CfgBannWallData
 
 	rooms     map[RoomID]*Room
 	plates    map[PlateID]*Plate
@@ -108,8 +139,8 @@ type MapConfig struct {
 	bannWalls map[BannWallID]*BannWall
 }
 
-func BuildGame() *Game {
-	g, _ := NewGame()
+func BuildGame(g *Game) {
+	// g, _ := NewGame()
 
 	for _, pos := range GlobalConfig.walls {
 		g.SetWall(pos)
@@ -135,9 +166,17 @@ func BuildGame() *Game {
 		GlobalConfig.rooms[roomData.id] = room
 	}
 
-	ConnectEverything(g)
+	for _, boulderData := range GlobalConfig.boulderData {
+		boulder := g.SetBoulder(boulderData.pos)
+		GlobalConfig.boulders[boulderData.id] = boulder
+	}
 
-	return g
+	for _, bannWallData := range GlobalConfig.bannWallData {
+		bannWall := g.SetBannWall(bannWallData.pos, bannWallData.bannWallType)
+		GlobalConfig.bannWalls[bannWallData.id] = bannWall
+	}
+
+	ConnectEverything(g)
 }
 
 func ConnectEverything(g *Game) {
@@ -183,6 +222,12 @@ func NewMapConfig() *MapConfig {
 		NewMapPosition(4, 0),
 		NewMapPosition(5, 0),
 		NewMapPosition(6, 0),
+
+		NewMapPosition(5, 8),
+		NewMapPosition(3, 8),
+
+		NewMapPosition(12, 8),
+		NewMapPosition(12, 10),
 	}
 
 	triggers := []CfgTriggerData{
@@ -195,6 +240,18 @@ func NewMapConfig() *MapConfig {
 
 	doors := []CfgDoorData{
 		NewCfgDoorData(1, -1, NewMapPosition(4, 8)),
+		NewCfgDoorData(2, -1, NewMapPosition(12, 9)),
+	}
+
+	boulders := []CfgBoulderData{
+		NewCfgBoulderData(1, NewMapPosition(7, 7)),
+	}
+
+	bannWalls := []CfgBannWallData{
+		NewCfgBannWallData(1, NewMapPosition(3, 3), 0),
+		NewCfgBannWallData(2, NewMapPosition(4, 3), 1),
+		NewCfgBannWallData(3, NewMapPosition(3, 4), 2),
+		NewCfgBannWallData(4, NewMapPosition(4, 4), 3),
 	}
 
 	return &MapConfig{
@@ -207,15 +264,19 @@ func NewMapConfig() *MapConfig {
 			DirWest,
 		},
 
-		walkTime:  300 * time.Millisecond,
-		mapWidth:  50,
-		mapHeight: 50,
+		walkTime: 300 * time.Millisecond,
+		rollTime: 300 * time.Millisecond,
+
+		mapWidth:  16,
+		mapHeight: 16,
 
 		walls: walls,
 
-		triggerData: triggers,
-		plateData:   plates,
-		doorData:    doors,
+		triggerData:  triggers,
+		plateData:    plates,
+		doorData:     doors,
+		boulderData:  boulders,
+		bannWallData: bannWalls,
 
 		rooms:     make(map[RoomID]*Room),
 		plates:    make(map[PlateID]*Plate),
@@ -300,12 +361,18 @@ func NewPlate() *Plate {
 }
 
 type BannWall struct {
-	isActive bool
+	isActive     bool
+	bannWallType int
 }
 
-func NewBannWall() *BannWall {
+func (bw *BannWall) Type() int {
+	return bw.bannWallType
+}
+
+func NewBannWall(bannWallType int) *BannWall {
 	return &BannWall{
-		isActive: true,
+		isActive:     true,
+		bannWallType: bannWallType,
 	}
 }
 
@@ -389,7 +456,7 @@ func (m *Map) NeighborOfCell(pos MapPosition, direction Direction) *Cell {
 
 func (g *Game) SetTrigger(pos MapPosition, direction Direction) *Trigger {
 	t := NewTrigger()
-	g.triggers = append(g.triggers, t)
+	g.triggers[pos] = t
 	cell := g.gameMap.Cell(pos)
 	cell.accessibleTriggers[direction] = t
 
@@ -450,6 +517,15 @@ func (g *Game) PlayerIsWalking(player Player) bool {
 	_, ok := g.playerMoveTransition[player]
 	return ok
 }
+
+// func (g *Game) BoulderIsMoving(boulder *Boulder) bool {
+// 	_, ok := g.boulderTransition[boulder]
+// 	return ok
+// }
+
+// func (g *Game) BoulderMoveFrame(boulder *Boulder) int {
+// 	return 0
+// }
 
 func (g *Game) PlayerWalkFrame(player Player) int {
 	if g.PlayerIsWalking(player) {
@@ -523,10 +599,13 @@ func (g *Game) PlayerMove(player Player, direction Direction) error {
 		if g.IsDoor(targetPos) && g.PlayerCanPassDoor(player, g.doors[targetPos]) {
 			// block door close
 		} else if g.IsBannWall(targetPos) && g.PlayerCanPassBannWall(player, g.bannWalls[targetPos]) {
+			log.Println("Bann wall passable")
 		} else if g.IsBoulder(targetPos) && g.PlayerCanPassBoulder(player, g.boulders[targetPos]) {
+			log.Println("Boulder passable")
 		} else if g.IsPlayer(targetPos) {
 			return errors.New("Player on field")
 		} else if g.PosEmptyInFuture(targetPos) {
+			log.Println("Will be empty - something moving away nothing in")
 		} else {
 			return errors.New("Is not empty and will not be empty")
 		}
@@ -575,6 +654,9 @@ func (g *Game) PlayerAction(player Player, direction Direction) error {
 	boulderPos := playerPos.Neighbor(direction)
 	if g.IsBoulder(boulderPos) {
 		boulder := g.boulders[boulderPos]
+		if _, ok := g.boulderTransition[boulder]; ok {
+			return errors.New("Boulder already moving")
+		}
 		targetPos := playerPos.Neighbor(direction).Neighbor(direction)
 
 		if _, ok := g.boulderTransition[boulder]; ok {
@@ -672,7 +754,7 @@ func (dt *DoorTransition) IsFinished() bool {
 }
 
 func (bt *BoulderTransition) IsFinished() bool {
-	return bt.dtime > 500*time.Millisecond
+	return bt.dtime > GlobalConfig.rollTime
 }
 
 func (bwt *BannWallTransition) IsFinished() bool {
@@ -755,21 +837,13 @@ func (pmt *BoulderTransition) InterpPos() Position {
 	x, y := pmt.TargetPos().X(), pmt.TargetPos().Y()
 	ox, oy := pmt.OriginPos().X(), pmt.OriginPos().Y()
 	return Position{
-		x: float32(x-ox) * float32(pmt.dtime/maxTime),
-		y: float32(y-oy) * float32(pmt.dtime/maxTime),
+		x: float32(ox) + float32(x-ox)*float32(pmt.dtime)/float32(maxTime),
+		y: float32(oy) + float32(y-oy)*float32(pmt.dtime)/float32(maxTime),
 	}
 }
 
 func (pmt *BoulderTransition) Frame() int {
-	if pmt.dtime < 100*time.Millisecond {
-		return 0
-	} else if pmt.dtime < 225*time.Millisecond {
-		return 1
-	} else if pmt.dtime < 350*time.Millisecond {
-		return 2
-	} else {
-		return 3
-	}
+	return 0
 }
 
 func (pmt *PlayerMoveTransition) OriginPos() MapPosition {
@@ -814,6 +888,45 @@ func (g *Game) SetRoomVisible(room *Room) {
 	}
 }
 
+func (g *Game) PlateAtPos(pos MapPosition) bool {
+	_, ok := g.plates[pos]
+	return ok
+}
+
+func (g *Game) PlateCanBeActivated(pos MapPosition) bool {
+	if !g.PlateAtPos(pos) {
+		return false
+	}
+
+	plate := g.plates[pos]
+
+	for _, player := range g.players {
+		// player on field and player can pressure
+		if g.playerState[player].mapPos == pos &&
+			g.playerCans[player].canPressure[plate] {
+			return true
+		}
+	}
+
+	// boulder on field
+	if _, ok := g.boulders[pos]; ok {
+		return true
+	}
+
+	return false
+}
+
+func (g *Game) ActivatePlate(pos MapPosition) {
+	plate := g.plates[pos]
+	if plate.linkedBannWall != nil {
+		plate.linkedBannWall.isActive = false
+	}
+
+	if plate.linkedDoor != nil {
+		plate.linkedDoor.isOpen = true
+	}
+}
+
 func (g *Game) Update(t time.Duration) {
 	for player, moveTransition := range g.playerMoveTransition {
 		moveTransition.Update(t)
@@ -848,19 +961,40 @@ func (g *Game) Update(t time.Duration) {
 }
 
 func (g *Game) PosEmptyInFuture(pos MapPosition) bool {
+	canBeEmpty := false
+	for _, playerMoveTrans := range g.playerMoveTransition {
+		if playerMoveTrans.OriginPos() == pos {
+			canBeEmpty = true
+		}
+	}
+
+	for _, boulderTransition := range g.boulderTransition {
+		if boulderTransition.OriginPos() == pos {
+			canBeEmpty = true
+		}
+	}
+
+	if canBeEmpty && !g.PosOccupiedInFuture(pos) {
+		return true
+	} else {
+		return false
+	}
+}
+
+func (g *Game) PosOccupiedInFuture(pos MapPosition) bool {
 	for _, playerMoveTrans := range g.playerMoveTransition {
 		if playerMoveTrans.TargetPos() == pos {
-			return false
+			return true
 		}
 	}
 
 	for _, boulderTransition := range g.boulderTransition {
 		if boulderTransition.TargetPos() == pos {
-			return false
+			return true
 		}
 	}
 
-	return true
+	return false
 }
 
 func (g *Game) Width() int {
@@ -890,6 +1024,37 @@ func (g *Game) PlayerRenderPos(player Player) Position {
 	}
 }
 
+func (g *Game) BoulderRenderPos(boulder *Boulder) Position {
+	if transition, ok := g.boulderTransition[boulder]; ok {
+		return transition.InterpPos()
+	}
+	pos, _ := g.BoulderPos(boulder)
+	return Position{
+		x: float32(pos.X()),
+		y: float32(pos.Y()),
+	}
+}
+
+func (g *Game) BannWalls() map[MapPosition]*BannWall {
+	return g.bannWalls
+}
+
+func (g *Game) Boulders() map[MapPosition]*Boulder {
+	return g.boulders
+}
+
+func (g *Game) Doors() map[MapPosition]*Door {
+	return g.doors
+}
+
+func (g *Game) Triggers() map[MapPosition]*Trigger {
+	return g.triggers
+}
+
+func (g *Game) Plate() map[MapPosition]*Plate {
+	return g.plates
+}
+
 type Game struct {
 	players []Player
 	gameMap *Map
@@ -901,7 +1066,7 @@ type Game struct {
 	bannWalls map[MapPosition]*BannWall
 
 	rooms    []*Room
-	triggers []*Trigger
+	triggers map[MapPosition]*Trigger
 	plates   map[MapPosition]*Plate
 
 	playerCans map[Player]*PlayerCans
@@ -949,6 +1114,24 @@ func (g *Game) IsDoor(pos MapPosition) bool {
 	}
 	return false
 }
+
+func (g *Game) Door(pos MapPosition) *Door {
+	if door, ok := g.doors[pos]; ok {
+		return door
+	}
+
+	return nil
+}
+
+// func (g *Game) IsPassableDoor(pos MapPosition) bool {
+// 	if door, ok := g.doors[pos]; ok {
+// 		if door.isOpen {
+// 			return true
+// 		}
+
+// 		return false
+// 	}
+// }
 
 func (g *Game) IsBoulder(pos MapPosition) bool {
 	if _, ok := g.boulders[pos]; ok {
@@ -1026,8 +1209,8 @@ func (g *Game) SetDoor(pos MapPosition) *Door {
 	return d
 }
 
-func (g *Game) SetBannWall(pos MapPosition, startLookIn Direction) *BannWall {
-	bw := NewBannWall()
+func (g *Game) SetBannWall(pos MapPosition, bannWallType int) *BannWall {
+	bw := NewBannWall(bannWallType)
 	g.bannWalls[pos] = bw
 
 	for _, player := range g.players {
@@ -1035,6 +1218,18 @@ func (g *Game) SetBannWall(pos MapPosition, startLookIn Direction) *BannWall {
 	}
 
 	return bw
+}
+
+func (g *Game) IsHuman(player Player) bool {
+	if int(player) == 0 {
+		return true
+	} else {
+		return false
+	}
+}
+
+func (g *Game) IsGhost(player Player) bool {
+	return !g.IsHuman(player)
 }
 
 func (g *Game) NewPlayer(id int) Player {
@@ -1055,6 +1250,15 @@ func (g *Game) NewPlayer(id int) Player {
 	for y := 0; y < g.Height(); y++ {
 		for x := 0; x < g.Width(); x++ {
 			g.playerVis[player].visCell[NewMapPosition(x, y)] = false
+		}
+	}
+
+	for _, boulder := range g.boulders {
+		if g.IsHuman(player) {
+			g.playerCans[player].canPassBoulder[boulder] = false
+			g.playerCans[player].canPush[boulder] = true
+		} else if g.IsGhost(player) {
+			g.playerCans[player].canPassBoulder[boulder] = true
 		}
 	}
 
@@ -1147,6 +1351,8 @@ func NewGame() (*Game, error) {
 		doors:     make(map[MapPosition]*Door),
 		boulders:  make(map[MapPosition]*Boulder),
 		bannWalls: make(map[MapPosition]*BannWall),
+		plates:    make(map[MapPosition]*Plate),
+		triggers:  make(map[MapPosition]*Trigger),
 
 		playerCans: make(map[Player]*PlayerCans),
 		playerVis:  make(map[Player]*PlayerVis),
@@ -1160,6 +1366,8 @@ func NewGame() (*Game, error) {
 		running: false,
 		music:   nil,
 	}
+
+	BuildGame(r)
 
 	// if r.music = mixer.LoadMUS("data/music.ogg"); r.music == nil {
 	// 	return nil, errors.New(sdl.GetError())

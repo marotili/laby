@@ -19,6 +19,8 @@ const (
 type InputState struct {
 	keysDown map[Key]bool
 	actions  []Action
+	game     *Game
+	player   Player
 }
 
 type ActionType int
@@ -38,10 +40,12 @@ const (
 	ActionPlayerReady
 )
 
-func NewInputState() *InputState {
+func NewInputState(game *Game, player Player) *InputState {
 	return &InputState{
 		keysDown: make(map[Key]bool, 6),
 		actions:  make([]Action, 0, 10),
+		game:     game,
+		player:   player,
 	}
 }
 
@@ -111,7 +115,7 @@ func NewEnterAction() *EnterAction {
 }
 
 const keyShortTimeDown time.Duration = 200 * time.Millisecond // ms
-const keyLongTimeDown time.Duration = 200 * time.Millisecond  // ~ the time needed for the player to move a tile
+const keyLongTimeDown time.Duration = 50 * time.Millisecond   // ~ the time needed for the player to move a tile
 
 func (ksa *KeyShortAction) Update(inputS *InputState, dt time.Duration) (ActionType, bool, Action) {
 	if inputS.KeyUp(ksa.key) {
@@ -153,8 +157,26 @@ func (kla *KeyLongAction) Update(inputS *InputState, dt time.Duration) (ActionTy
 	}
 
 	kla.dtime += dt
-	if kla.dtime >= keyLongTimeDown {
+	if kla.dtime >= keyLongTimeDown && !inputS.game.PlayerIsWalking(inputS.player) {
+		var dir Direction
+		switch kla.key {
+		case KeyA:
+			dir = DirWest
+		case KeyW:
+			dir = DirNorth
+		case KeyD:
+			dir = DirEast
+		case KeyS:
+			dir = DirSouth
+		}
+
 		next := NewKeyLongAction(kla.key, 0) // restart action - pulses every keyLongTimeDown ms
+
+		target := inputS.game.playerState[inputS.player].mapPos.Neighbor(dir)
+		if inputS.game.IsBoulder(target) {
+			return ActionAction, true, next
+		}
+
 		switch kla.key {
 		case KeyA:
 			return ActionMoveWest, true, next // action ok
