@@ -62,6 +62,7 @@ func PollEvents() []sdl.Event {
 }
 
 func main() {
+	log.SetFlags(log.Llongfile)
 	runtime.LockOSThread()
 
 	conn, err := net.Dial("tcp", ":8001")
@@ -122,8 +123,16 @@ func main() {
 	enc := gob.NewEncoder(conn)
 	dec := gob.NewDecoder(conn)
 
+	var player game.Player
+	dec.Decode(&player)
+	log.Println("Received player self")
+
 	renderData := LoadRenderData()
 	clientGame, _ := game.NewGame()
+	// get player id from server
+	clientGame.NewPlayer(int(player))
+
+	gameStarted := false
 
 	for running {
 		for _, event := range PollEvents() {
@@ -157,7 +166,25 @@ func main() {
 			log.Fatal("Sending multiple actions not supported")
 		}
 
+		if !gameStarted {
+			log.Println("Request game state")
+			var otherPlayer game.Player
+			var otherPlayerJoined bool
+			var gameStartsNow bool
+
+			enc.Encode(game.ClientReqGameState)
+			dec.Decode(&otherPlayerJoined)
+			if otherPlayerJoined {
+				dec.Decode(&otherPlayer)
+				dec.Decode(&gameStartsNow)
+				clientGame.NewPlayer(int(otherPlayer))
+				gameStarted = gameStartsNow
+			}
+		}
+
 		// send user input to server
+
+		log.Println("Send new actions")
 		enc.Encode(game.ClientReqSendAction)
 		enc.Encode(len(playerActions))
 		for _, action := range playerActions {
@@ -172,6 +199,7 @@ func main() {
 
 		// now fetch input from other users
 
+		log.Println("Requesting client update")
 		enc.Encode(game.ClientReqUpdate)
 		var numPlayers int
 		var numActions int

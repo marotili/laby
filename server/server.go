@@ -152,6 +152,8 @@ func handleConnection(conn net.Conn) {
 	dec := gob.NewDecoder(conn)
 	enc := gob.NewEncoder(conn)
 
+	enc.Encode(player.gamePlayer)
+
 	var req game.ClientRequest
 	for {
 		log.Println("Wait for request")
@@ -161,7 +163,25 @@ func handleConnection(conn net.Conn) {
 		}
 
 		log.Println("Got request", req)
+
 		switch req {
+		case game.ClientReqGameState:
+			newPlayer := false
+			var theOtherPlayer *Player = nil
+			for otherPlayer, _ := range gameState.playerData {
+				if otherPlayer != player {
+					newPlayer = true
+					theOtherPlayer = otherPlayer
+				}
+			}
+
+			if newPlayer {
+				enc.Encode(true) // player joined
+				enc.Encode(theOtherPlayer.gamePlayer)
+				enc.Encode(gameState.gameStarted)
+			} else {
+				enc.Encode(false) // no player joined
+			}
 		case game.ClientReqSendAction:
 			var actions []game.ActionType = make([]game.ActionType, 0, 100)
 			var numActions int

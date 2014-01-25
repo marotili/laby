@@ -26,4 +26,5 @@ type ClientRequest int
 const (
 	ClientReqSendAction ClientRequest = iota
 	ClientReqUpdate
+	ClientReqGameState
 )

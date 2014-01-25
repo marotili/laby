@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/banthar/Go-SDL/mixer"
 	"github.com/banthar/Go-SDL/sdl"
+	"log"
 	"time"
 )
 
@@ -16,6 +17,26 @@ const (
 	CellTypeWall
 	CellTypeDoor
 )
+
+var GlobalConfig *MapConfig = NewMapConfig()
+
+type MapConfig struct {
+	playerStartPos  []MapPosition
+	playerStartLook []Direction
+}
+
+func NewMapConfig() *MapConfig {
+	return &MapConfig{
+		playerStartPos: []MapPosition{
+			MapPosition{5, 5},
+			MapPosition{4, 4},
+		},
+		playerStartLook: []Direction{
+			DirEast,
+			DirWest,
+		},
+	}
+}
 
 type Player int
 
@@ -104,6 +125,14 @@ type Position struct {
 	y float32
 }
 
+func (p Position) X() float32 {
+	return p.x
+}
+
+func (p Position) Y() float32 {
+	return p.y
+}
+
 type Cell struct {
 	accessibleTriggers map[Direction]*Trigger
 	isWall             bool
@@ -181,6 +210,7 @@ type MoveableTransition interface {
 	Transition
 	OriginPos() MapPosition
 	TargetPos() MapPosition
+	InterpPos() Position
 }
 
 func (g *Game) PlayerMove(player Player, direction Direction) error {
@@ -408,12 +438,32 @@ func (pmt *BoulderTransition) TargetPos() MapPosition {
 	return pmt.toPos
 }
 
+func (pmt *BoulderTransition) InterpPos() Position {
+	maxTime := 500 * time.Millisecond
+	x, y := pmt.TargetPos().X(), pmt.TargetPos().Y()
+	ox, oy := pmt.OriginPos().X(), pmt.OriginPos().Y()
+	return Position{
+		x: float32(x-ox) * float32(pmt.dtime/maxTime),
+		y: float32(y-oy) * float32(pmt.dtime/maxTime),
+	}
+}
+
 func (pmt *PlayerMoveTransition) OriginPos() MapPosition {
 	return pmt.fromPos
 }
 
 func (pmt *PlayerMoveTransition) TargetPos() MapPosition {
 	return pmt.toPos
+}
+
+func (pmt *PlayerMoveTransition) InterpPos() Position {
+	maxTime := 500 * time.Millisecond
+	x, y := pmt.TargetPos().X(), pmt.TargetPos().Y()
+	ox, oy := pmt.OriginPos().X(), pmt.OriginPos().Y()
+	return Position{
+		x: float32(x-ox) * float32(pmt.dtime/maxTime),
+		y: float32(y-oy) * float32(pmt.dtime/maxTime),
+	}
 }
 
 func (g *Game) Update(t time.Duration) {
@@ -473,6 +523,21 @@ func (g *Game) Height() int {
 
 func (g *Game) Cell(pos MapPosition) *Cell {
 	return g.gameMap.Cell(pos)
+}
+
+func (g *Game) Players() []Player {
+	return g.players
+}
+
+func (g *Game) PlayerRenderPos(player Player) Position {
+	if transition, ok := g.playerMoveTransition[player]; ok {
+		return transition.InterpPos()
+	}
+
+	return Position{
+		x: float32(g.playerState[player].mapPos.X()),
+		y: float32(g.playerState[player].mapPos.Y()),
+	}
 }
 
 type Game struct {
@@ -609,6 +674,14 @@ func (g *Game) NewPlayer(id int) Player {
 	g.playerVis[player] = NewPlayerVis()
 
 	g.players = append(g.players, player)
+
+	log.Println(id)
+	log.Println(GlobalConfig)
+	startPos := GlobalConfig.playerStartPos[id]
+
+	g.playerState[player] = NewPlayerState(startPos,
+		GlobalConfig.playerStartLook[id])
+
 	return player
 }
 
@@ -659,10 +732,6 @@ func (g *Game) PlayerCanTrigger(player Player, t *Trigger) bool {
 	return g.playerCans[player].canTrigger[t]
 }
 
-func (g *Game) SetPlayer(player Player, pos MapPosition, startLookIn Direction) {
-	g.playerState[player] = NewPlayerState(pos, startLookIn)
-}
-
 func (g *Game) MakePlayerToGhost(player Player) {
 	for _, door := range g.doors {
 		g.SetPlayerCanPassDoor(player, door)
@@ -695,6 +764,7 @@ func (g *Game) BoulderPos(wantedBoulder *Boulder) (MapPosition, error) {
 func NewGame() (*Game, error) {
 	width, height := 10, 10
 	r := &Game{
+		players:     make([]Player, 0, 2),
 		gameMap:     NewMap(width, height),
 		playerState: make(map[Player]*PlayerState, 2),
 
