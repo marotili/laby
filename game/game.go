@@ -10,6 +10,82 @@ import (
 	"time"
 )
 
+func NewMapConfig() *MapConfig {
+	walls := []MapPosition{
+		NewMapPosition(0, 0),
+		NewMapPosition(1, 0),
+		NewMapPosition(2, 0),
+		NewMapPosition(3, 0),
+		NewMapPosition(4, 0),
+		NewMapPosition(5, 0),
+		NewMapPosition(6, 0),
+
+		NewMapPosition(5, 8),
+		NewMapPosition(3, 8),
+
+		NewMapPosition(12, 8),
+		NewMapPosition(12, 10),
+	}
+
+	triggers := []CfgTriggerData{
+		// triggerID doorID bannID
+		NewCfgTriggerData(1, 2, -1, NewMapPosition(2, 1), DirNorth),
+	}
+
+	plates := []CfgPlateData{
+		NewCfgPlateData(1, 1, -1, NewMapPosition(14, 10)),
+	}
+
+	doors := []CfgDoorData{
+		NewCfgDoorData(1, -1, NewMapPosition(4, 8)),
+		NewCfgDoorData(2, -1, NewMapPosition(12, 9)),
+	}
+
+	boulders := []CfgBoulderData{
+		NewCfgBoulderData(1, NewMapPosition(7, 7)),
+	}
+
+	bannWalls := []CfgBannWallData{
+		NewCfgBannWallData(1, NewMapPosition(3, 3), 0),
+		NewCfgBannWallData(2, NewMapPosition(4, 3), 1),
+		NewCfgBannWallData(3, NewMapPosition(3, 4), 2),
+		NewCfgBannWallData(4, NewMapPosition(4, 4), 3),
+	}
+
+	return &MapConfig{
+		playerStartPos: []MapPosition{
+			MapPosition{5, 5},
+			MapPosition{4, 4},
+		},
+		playerStartLook: []Direction{
+			DirEast,
+			DirWest,
+		},
+
+		walkTime:   300 * time.Millisecond,
+		rollTime:   300 * time.Millisecond,
+		actionTime: 300 * time.Millisecond,
+
+		mapWidth:  16,
+		mapHeight: 16,
+
+		walls: walls,
+
+		triggerData:  triggers,
+		plateData:    plates,
+		doorData:     doors,
+		boulderData:  boulders,
+		bannWallData: bannWalls,
+
+		rooms:     make(map[RoomID]*Room),
+		plates:    make(map[PlateID]*Plate),
+		triggers:  make(map[TriggerID]*Trigger),
+		doors:     make(map[DoorID]*Door),
+		boulders:  make(map[BoulderID]*Boulder),
+		bannWalls: make(map[BannWallID]*BannWall),
+	}
+}
+
 type CellType int
 
 const (
@@ -117,8 +193,9 @@ type MapConfig struct {
 	playerStartPos  []MapPosition
 	playerStartLook []Direction
 
-	walkTime time.Duration
-	rollTime time.Duration
+	walkTime   time.Duration
+	rollTime   time.Duration
+	actionTime time.Duration
 
 	walls     []MapPosition
 	mapWidth  int
@@ -213,80 +290,6 @@ func ConnectEverything(g *Game) {
 	}
 }
 
-func NewMapConfig() *MapConfig {
-	walls := []MapPosition{
-		NewMapPosition(0, 0),
-		NewMapPosition(1, 0),
-		NewMapPosition(2, 0),
-		NewMapPosition(3, 0),
-		NewMapPosition(4, 0),
-		NewMapPosition(5, 0),
-		NewMapPosition(6, 0),
-
-		NewMapPosition(5, 8),
-		NewMapPosition(3, 8),
-
-		NewMapPosition(12, 8),
-		NewMapPosition(12, 10),
-	}
-
-	triggers := []CfgTriggerData{
-		NewCfgTriggerData(1, -1, -1, NewMapPosition(5, 5), DirNorth),
-	}
-
-	plates := []CfgPlateData{
-		NewCfgPlateData(1, 1, -1, NewMapPosition(14, 10)),
-	}
-
-	doors := []CfgDoorData{
-		NewCfgDoorData(1, -1, NewMapPosition(4, 8)),
-		NewCfgDoorData(2, -1, NewMapPosition(12, 9)),
-	}
-
-	boulders := []CfgBoulderData{
-		NewCfgBoulderData(1, NewMapPosition(7, 7)),
-	}
-
-	bannWalls := []CfgBannWallData{
-		NewCfgBannWallData(1, NewMapPosition(3, 3), 0),
-		NewCfgBannWallData(2, NewMapPosition(4, 3), 1),
-		NewCfgBannWallData(3, NewMapPosition(3, 4), 2),
-		NewCfgBannWallData(4, NewMapPosition(4, 4), 3),
-	}
-
-	return &MapConfig{
-		playerStartPos: []MapPosition{
-			MapPosition{5, 5},
-			MapPosition{4, 4},
-		},
-		playerStartLook: []Direction{
-			DirEast,
-			DirWest,
-		},
-
-		walkTime: 300 * time.Millisecond,
-		rollTime: 300 * time.Millisecond,
-
-		mapWidth:  16,
-		mapHeight: 16,
-
-		walls: walls,
-
-		triggerData:  triggers,
-		plateData:    plates,
-		doorData:     doors,
-		boulderData:  boulders,
-		bannWallData: bannWalls,
-
-		rooms:     make(map[RoomID]*Room),
-		plates:    make(map[PlateID]*Plate),
-		triggers:  make(map[TriggerID]*Trigger),
-		doors:     make(map[DoorID]*Door),
-		boulders:  make(map[BoulderID]*Boulder),
-		bannWalls: make(map[BannWallID]*BannWall),
-	}
-}
-
 func (g *Game) CellIsVisible(pos MapPosition) bool {
 	return true
 }
@@ -314,6 +317,13 @@ type Door struct {
 	linkedRoom *Room
 }
 
+func (d *Door) IsOpen() bool {
+	return d.isOpen
+}
+func (d *Door) IsClosed() bool {
+	return !d.IsOpen()
+}
+
 func NewDoor() *Door {
 	return &Door{
 		isOpen:     false,
@@ -327,6 +337,10 @@ type Trigger struct {
 	linkedDoor     *Door
 	linkedBannWall *BannWall
 	needsTrigger   *Trigger
+}
+
+func (t *Trigger) IsActive() bool {
+	return t.isActive
 }
 
 func NewTrigger() *Trigger {
@@ -426,6 +440,24 @@ type Cell struct {
 	isWall             bool
 }
 
+func (c *Cell) DirOfTrigger(t *Trigger) (Direction, error) {
+	for dir, trigger := range c.accessibleTriggers {
+		if trigger == t {
+			return dir, nil
+		}
+	}
+
+	return DirNorth, errors.New("No trigger")
+}
+
+func (c *Cell) TriggerByDir(dir Direction) *Trigger {
+	if trigger, ok := c.accessibleTriggers[dir]; ok {
+		return trigger
+	}
+
+	return nil
+}
+
 func NewCell() *Cell {
 	return &Cell{
 		accessibleTriggers: make(map[Direction]*Trigger),
@@ -505,12 +537,16 @@ type Transition interface {
 	UpdateGameState(*Game)
 }
 
-type MoveableTransition interface {
+type AnimTransition interface {
 	Transition
+	Frame() int
+}
+
+type MoveableTransition interface {
+	AnimTransition
 	OriginPos() MapPosition
 	TargetPos() MapPosition
 	InterpPos() Position
-	Frame() int
 }
 
 func (g *Game) PlayerIsWalking(player Player) bool {
@@ -526,6 +562,14 @@ func (g *Game) PlayerIsWalking(player Player) bool {
 // func (g *Game) BoulderMoveFrame(boulder *Boulder) int {
 // 	return 0
 // }
+
+func (g *Game) PlayerActionFrame(player Player) int {
+	if g.PlayerDoesAction(player) {
+		return g.playerActionTransition[player].Frame()
+	}
+
+	return 0
+}
 
 func (g *Game) PlayerWalkFrame(player Player) int {
 	if g.PlayerIsWalking(player) {
@@ -596,19 +640,24 @@ func (g *Game) PlayerMove(player Player, direction Direction) error {
 	}
 
 	if !g.IsEmpty(targetPos) {
-		if g.IsDoor(targetPos) && g.PlayerCanPassDoor(player, g.doors[targetPos]) {
+		if g.IsDoor(targetPos) && g.Door(targetPos).IsOpen() {
+			// door is open
+		} else if g.IsDoor(targetPos) && g.PlayerCanPassDoor(player, g.doors[targetPos]) {
 			// block door close
 		} else if g.IsBannWall(targetPos) && g.PlayerCanPassBannWall(player, g.bannWalls[targetPos]) {
 			log.Println("Bann wall passable")
 		} else if g.IsBoulder(targetPos) && g.PlayerCanPassBoulder(player, g.boulders[targetPos]) {
 			log.Println("Boulder passable")
-		} else if g.IsPlayer(targetPos) {
-			return errors.New("Player on field")
 		} else if g.PosEmptyInFuture(targetPos) {
 			log.Println("Will be empty - something moving away nothing in")
 		} else {
 			return errors.New("Is not empty and will not be empty")
 		}
+
+		if g.IsPlayer(targetPos) {
+			return errors.New("Player on field")
+		}
+
 	}
 
 	g.playerMoveTransition[player] =
@@ -618,11 +667,30 @@ func (g *Game) PlayerMove(player Player, direction Direction) error {
 }
 
 func (g *Game) ActivateTrigger(player Player, trigger *Trigger) {
+	log.Println("Trigger activated")
+	trigger.isActive = !trigger.isActive
 
+	if trigger.linkedDoor != nil {
+		log.Println("Door toogled")
+		trigger.linkedDoor.isOpen = !trigger.linkedDoor.isOpen
+	}
+
+	if trigger.linkedBannWall != nil {
+		trigger.linkedBannWall.isActive = !trigger.linkedBannWall.isActive
+	}
+}
+
+func (g *Game) PlayerDoesAction(player Player) bool {
+	_, ok := g.playerActionTransition[player]
+	return ok
 }
 
 func (g *Game) PlayerAction(player Player, direction Direction) error {
-	if _, ok := g.playerMoveTransition[player]; ok {
+	if g.PlayerIsWalking(player) {
+		return errors.New("Player in action")
+	}
+
+	if g.PlayerDoesAction(player) {
 		return errors.New("Player in action")
 	}
 
@@ -642,6 +710,7 @@ func (g *Game) PlayerAction(player Player, direction Direction) error {
 
 		if g.PlayerCanTrigger(player, trigger) {
 			g.ActivateTrigger(player, trigger)
+			g.playerActionTransition[player] = NewPlayerActionTransition(player)
 			return nil
 		} else {
 			return errors.New("Not authorized")
@@ -679,6 +748,7 @@ func (g *Game) PlayerAction(player Player, direction Direction) error {
 
 		g.boulderTransition[boulder] =
 			NewBoulderTransition(boulder, boulderPos, targetPos)
+		g.playerActionTransition[player] = NewPlayerActionTransition(player)
 		return nil
 
 		// feedback - cannot do
@@ -745,6 +815,15 @@ type PlayerMoveTransition struct {
 	toPos   MapPosition
 }
 
+type PlayerActionTransition struct {
+	dtime  time.Duration
+	player Player
+}
+
+func (pat *PlayerActionTransition) IsFinished() bool {
+	return pat.dtime > GlobalConfig.actionTime
+}
+
 func (pmt *PlayerMoveTransition) IsFinished() bool {
 	return pmt.dtime > GlobalConfig.walkTime
 }
@@ -759,6 +838,10 @@ func (bt *BoulderTransition) IsFinished() bool {
 
 func (bwt *BannWallTransition) IsFinished() bool {
 	return bwt.dtime > 500*time.Millisecond
+}
+
+func (pat *PlayerActionTransition) Update(dt time.Duration) {
+	pat.dtime += dt
 }
 
 func (doort *DoorTransition) Update(dt time.Duration) {
@@ -780,6 +863,10 @@ func (pmt *PlayerMoveTransition) UpdateGameState(g *Game) {
 	log.Println("New pos is", pmt.TargetPos())
 
 	g.playerState[pmt.player].mapPos = pmt.TargetPos()
+}
+
+func (pmt *PlayerActionTransition) UpdateGameState(g *Game) {
+	// g.playerState[pmt.player].
 }
 
 func (dt *DoorTransition) UpdateGameState(g *Game) {
@@ -824,6 +911,13 @@ func NewBannWallTransition(bw *BannWall) *BannWallTransition {
 	}
 }
 
+func NewPlayerActionTransition(player Player) *PlayerActionTransition {
+	return &PlayerActionTransition{
+		dtime:  0,
+		player: player,
+	}
+}
+
 func (pmt *BoulderTransition) OriginPos() MapPosition {
 	return pmt.fromPos
 }
@@ -844,6 +938,10 @@ func (pmt *BoulderTransition) InterpPos() Position {
 
 func (pmt *BoulderTransition) Frame() int {
 	return 0
+}
+
+func (pat *PlayerActionTransition) Frame() int {
+	return SplitTimeEven(4, GlobalConfig.actionTime, pat.dtime)
 }
 
 func (pmt *PlayerMoveTransition) OriginPos() MapPosition {
@@ -956,6 +1054,15 @@ func (g *Game) Update(t time.Duration) {
 			boulderTransition.UpdateGameState(g)
 			// check if plate underneath new position
 			delete(g.boulderTransition, boulder)
+		}
+	}
+
+	for player, actionTransition := range g.playerActionTransition {
+		actionTransition.Update(t)
+
+		if actionTransition.IsFinished() {
+			actionTransition.UpdateGameState(g)
+			delete(g.playerActionTransition, player)
 		}
 	}
 }
@@ -1072,8 +1179,9 @@ type Game struct {
 	playerCans map[Player]*PlayerCans
 	playerVis  map[Player]*PlayerVis
 
-	playerMoveTransition map[Player]MoveableTransition
-	boulderTransition    map[*Boulder]MoveableTransition
+	playerMoveTransition   map[Player]MoveableTransition
+	playerActionTransition map[Player]AnimTransition
+	boulderTransition      map[*Boulder]MoveableTransition
 
 	triggerTransition map[*Trigger]*TriggerTransition
 	doorTransition    map[*Door]*DoorTransition
@@ -1262,6 +1370,13 @@ func (g *Game) NewPlayer(id int) Player {
 		}
 	}
 
+	for _, trigger := range g.triggers {
+		if g.IsHuman(player) {
+		} else if g.IsGhost(player) {
+			g.playerCans[player].canTrigger[trigger] = true
+		}
+	}
+
 	return player
 }
 
@@ -1357,8 +1472,9 @@ func NewGame() (*Game, error) {
 		playerCans: make(map[Player]*PlayerCans),
 		playerVis:  make(map[Player]*PlayerVis),
 
-		playerMoveTransition: make(map[Player]MoveableTransition),
-		boulderTransition:    make(map[*Boulder]MoveableTransition),
+		playerMoveTransition:   make(map[Player]MoveableTransition),
+		playerActionTransition: make(map[Player]AnimTransition),
+		boulderTransition:      make(map[*Boulder]MoveableTransition),
 
 		triggerTransition: make(map[*Trigger]*TriggerTransition),
 		doorTransition:    make(map[*Door]*DoorTransition),

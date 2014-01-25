@@ -233,7 +233,8 @@ func main() {
 		for thePlayer, actions := range data {
 			for _, action := range actions {
 				log.Println("Perform action from player", thePlayer, action)
-				clientGame.PerformPlayerAction(thePlayer, action)
+				err := clientGame.PerformPlayerAction(thePlayer, action)
+				log.Println(err)
 			}
 		}
 
