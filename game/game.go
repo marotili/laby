@@ -6,7 +6,6 @@ import (
 	"errors"
 	"github.com/banthar/Go-SDL/mixer"
 	"github.com/banthar/Go-SDL/sdl"
-	// "github.com/banthar/Go-SDL/ttf"
 	"time"
 )
 
