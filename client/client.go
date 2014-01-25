@@ -134,6 +134,8 @@ func main() {
 
 	gameStarted := false
 
+	log.Println("We are", player)
+
 	for running {
 		for _, event := range PollEvents() {
 			switch e := event.(type) {
@@ -162,12 +164,15 @@ func main() {
 
 		// handle user input
 		playerActions := is.StepActions(t)
+
+		clientGame.Update(t)
+
 		if len(playerActions) > 1 {
 			log.Fatal("Sending multiple actions not supported")
 		}
 
 		if !gameStarted {
-			log.Println("Request game state")
+			// log.Println("Request game state")
 			var otherPlayer game.Player
 			var otherPlayerJoined bool
 			var gameStartsNow bool
@@ -178,13 +183,14 @@ func main() {
 				dec.Decode(&otherPlayer)
 				dec.Decode(&gameStartsNow)
 				clientGame.NewPlayer(int(otherPlayer))
+				log.Println("Added other player")
 				gameStarted = gameStartsNow
 			}
 		}
 
 		// send user input to server
 
-		log.Println("Send new actions")
+		// log.Println("Send new actions")
 		enc.Encode(game.ClientReqSendAction)
 		enc.Encode(len(playerActions))
 		for _, action := range playerActions {
@@ -193,37 +199,47 @@ func main() {
 		var serverResp game.ServerResponse
 		dec.Decode(&serverResp)
 		if serverResp != game.ServerActionOk {
+			log.Println("server action not ok", serverResp)
 			// drop actions
+			// log.Println("Dropped actions")
 			playerActions = make([]game.ActionType, 0)
 		}
 
 		// now fetch input from other users
 
-		log.Println("Requesting client update")
+		// log.Println("Requesting client update")
 		enc.Encode(game.ClientReqUpdate)
 		var numPlayers int
 		var numActions int
-		var player game.Player
+		var otherPlayer game.Player
 		var action game.ActionType
 		dec.Decode(&numPlayers)
 
 		var data map[game.Player][]game.ActionType = make(map[game.Player][]game.ActionType, 0)
 		for i := 0; i < numPlayers; i++ {
-			dec.Decode(&player)
-			data[player] = make([]game.ActionType, 0)
+			dec.Decode(&otherPlayer)
+			data[otherPlayer] = make([]game.ActionType, 0)
 
 			dec.Decode(&numActions)
 			for j := 0; j < numActions; j++ {
 				dec.Decode(&action)
-				data[player] = append(data[player], action)
+				log.Println("Received action", otherPlayer, action)
+				data[otherPlayer] = append(data[otherPlayer], action)
+			}
+		}
+
+		data[player] = playerActions
+		for thePlayer, actions := range data {
+			for _, action := range actions {
+				log.Println("Perform action from player", thePlayer, action)
+				clientGame.PerformPlayerAction(thePlayer, action)
 			}
 		}
 
 		RenderMap(renderData, clientGame)
 
 		// TODO
-		selfPlayer := game.Player(0)
-		data[selfPlayer] = playerActions
+		// selfPlayer := game.Player(0)
 
 		// UpdateGame
 

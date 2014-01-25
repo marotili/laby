@@ -111,7 +111,7 @@ func NewEnterAction() *EnterAction {
 }
 
 const keyShortTimeDown time.Duration = 200 * time.Millisecond // ms
-const keyLongTimeDown time.Duration = 400 * time.Millisecond  // ~ the time needed for the player to move a tile
+const keyLongTimeDown time.Duration = 200 * time.Millisecond  // ~ the time needed for the player to move a tile
 
 func (ksa *KeyShortAction) Update(inputS *InputState, dt time.Duration) (ActionType, bool, Action) {
 	if inputS.KeyUp(ksa.key) {
@@ -130,7 +130,18 @@ func (ksa *KeyShortAction) Update(inputS *InputState, dt time.Duration) (ActionT
 	ksa.dtime += dt
 
 	if ksa.dtime >= keyShortTimeDown {
-		return ActionNoAction, true, NewKeyLongAction(ksa.key, keyLongTimeDown)
+		var action ActionType = ActionNoAction
+		switch ksa.key {
+		case KeyA:
+			action = ActionLookWest
+		case KeyW:
+			action = ActionLookNorth
+		case KeyD:
+			action = ActionLookEast
+		case KeyS:
+			action = ActionLookSouth
+		}
+		return action, true, NewKeyLongAction(ksa.key, keyLongTimeDown)
 	}
 
 	return ActionNoAction, true, ksa // keep action
