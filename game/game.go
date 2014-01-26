@@ -14,6 +14,16 @@ const Ghost Player = Player(1)
 const Human Player = Player(0)
 const GhostOrHuman Player = Player(-1)
 
+func FillRect(x0, y0, x1, y1 int, pos []MapPosition) []MapPosition {
+	for y := y0; y <= y1; y++ {
+		for x := x0; x <= x1; x++ {
+			pos = append(pos, MapPosition{x, y})
+		}
+	}
+
+	return pos
+}
+
 func NewMapConfig() *MapConfig {
 	walls := []MapPosition{
 		MapPosition{0, 0},
@@ -156,7 +166,9 @@ func NewMapConfig() *MapConfig {
 		NewCfgTriggerData(1, 2, -1, NewMapPosition(4, 15), DirSouth, Human, GhostOrHuman),
 		NewCfgTriggerData(2, 1, -1, NewMapPosition(2, 15), DirEast, Ghost, GhostOrHuman),
 		// boulder drop
-		NewCfgTriggerData(3, -1, -1, NewMapPosition(7, 12), DirEast, Human, GhostOrHuman), // x1
+		// NewCfgTriggerData(3, -1, -1, NewMapPosition(7, 12), DirEast, Human, GhostOrHuman), // x1
+		NewCfgTriggerData(3, 3, -1, NewMapPosition(7, 12), DirEast, Human, GhostOrHuman), // x1
+
 		NewCfgTriggerData(5, 6, -1, NewMapPosition(11, 12), DirEast, Human, Ghost),        // g4
 		NewCfgTriggerData(6, 5, -1, NewMapPosition(13, 11), DirWest, Ghost, GhostOrHuman), // g5
 		NewCfgTriggerData(7, 7, -1, NewMapPosition(13, 5), DirEast, Human, GhostOrHuman),
@@ -168,7 +180,9 @@ func NewMapConfig() *MapConfig {
 		NewCfgTriggerData(10, -1, -1, NewMapPosition(2, 5), DirSouth, GhostOrHuman, Human),
 		NewCfgTriggerData(11, -1, -1, NewMapPosition(7, 1), DirEast, Human, GhostOrHuman),
 
-		NewCfgTriggerData(12, -1, -1, NewMapPosition(8, 15), DirSouth, Ghost, Human),
+		// mid down
+		// NewCfgTriggerData(12, -1, -1, NewMapPosition(8, 15), DirSouth, Ghost, Human),
+		NewCfgTriggerData(12, 4, -1, NewMapPosition(8, 15), DirSouth, Ghost, Human),
 	}
 
 	plates := []CfgPlateData{
@@ -180,11 +194,11 @@ func NewMapConfig() *MapConfig {
 		NewCfgDoorData(1, 3, NewMapPosition(2, 13)),
 		NewCfgDoorData(2, 3, NewMapPosition(4, 13)),
 		NewCfgDoorData(3, 4, NewMapPosition(8, 11)),
-		NewCfgDoorData(4, 5, NewMapPosition(10, 14)), /// t4
-		NewCfgDoorData(5, 7, NewMapPosition(12, 13)), // t5
-		NewCfgDoorData(6, 6, NewMapPosition(10, 8)),  // t6
+		NewCfgDoorData(4, 7, NewMapPosition(10, 14)), /// t4
+		NewCfgDoorData(5, 6, NewMapPosition(12, 13)), // t5
+		NewCfgDoorData(6, 5, NewMapPosition(10, 8)),  // t6
 		NewCfgDoorData(7, 8, NewMapPosition(8, 5)),
-		NewCfgDoorData(8, 9, NewMapPosition(3, 6)),
+		NewCfgDoorData(8, 9, NewMapPosition(6, 3)),
 		NewCfgDoorData(9, -1, NewMapPosition(1, 3)),
 	}
 
@@ -209,6 +223,30 @@ func NewMapConfig() *MapConfig {
 		NewCfgBannWallData(11, NewMapPosition(3, 4), 2),
 		NewCfgBannWallData(13, NewMapPosition(4, 4), 3),
 	}
+
+	room3 := make([]MapPosition, 0)
+	room3 = FillRect(0, 6, 8, 13, room3)
+
+	room4 := make([]MapPosition, 0)
+	room4 = FillRect(6, 13, 10, 16, room4)
+	room4 = FillRect(8, 10, 10, 13, room4)
+
+	room5 := make([]MapPosition, 0)
+	room5 = FillRect(8, 8, 14, 10, room5)
+	room5 = FillRect(10, 10, 14, 13, room5)
+
+	room7 := make([]MapPosition, 0)
+	room7 = FillRect(10, 13, 14, 16, room7)
+
+	room6 := make([]MapPosition, 0)
+	room6 = FillRect(8, 0, 14, 8, room6)
+
+	room8 := make([]MapPosition, 0)
+	room8 = FillRect(5, 3, 8, 6, room8)
+
+	room9 := make([]MapPosition, 0)
+	room9 = FillRect(0, 0, 5, 6, room9)
+	room9 = FillRect(5, 0, 8, 3, room9)
 
 	rooms := []CfgRoomData{
 		NewCfgRoomData(1, []MapPosition{
@@ -255,164 +293,14 @@ func NewMapConfig() *MapConfig {
 			MapPosition{3 + 3, 13},
 		}),
 
-		NewCfgRoomData(3, []MapPosition{
-			MapPosition{1, 7},
-			MapPosition{2, 7},
-			MapPosition{3, 7},
-			MapPosition{4, 7},
-			MapPosition{5, 7},
-			MapPosition{6, 7},
-			MapPosition{7, 7},
+		NewCfgRoomData(3, room3),
 
-			MapPosition{1, 8},
-			MapPosition{2, 8},
-			MapPosition{3, 8},
-			MapPosition{4, 8},
-			MapPosition{5, 8},
-			MapPosition{6, 8},
-			MapPosition{7, 8},
-
-			MapPosition{1, 9},
-			MapPosition{2, 9},
-			MapPosition{3, 9},
-			MapPosition{4, 9},
-			MapPosition{5, 9},
-			MapPosition{6, 9},
-			MapPosition{7, 9},
-
-			MapPosition{1, 10},
-			MapPosition{2, 10},
-			MapPosition{3, 10},
-			MapPosition{4, 10},
-			MapPosition{5, 10},
-			MapPosition{6, 10},
-			MapPosition{7, 10},
-
-			MapPosition{2, 11},
-			MapPosition{4, 11},
-			MapPosition{6, 11},
-			MapPosition{7, 11},
-
-			MapPosition{2, 12},
-			MapPosition{4, 12},
-			MapPosition{6, 12},
-			MapPosition{7, 12},
-		}),
-
-		NewCfgRoomData(4, []MapPosition{
-			MapPosition{7, 14},
-			MapPosition{8, 14},
-			MapPosition{9, 14},
-
-			MapPosition{7, 15},
-			MapPosition{8, 15},
-			MapPosition{9, 15},
-
-			MapPosition{9, 11},
-			MapPosition{9, 12},
-			MapPosition{9, 13},
-		}),
-		NewCfgRoomData(5, []MapPosition{
-			MapPosition{9, 9},
-			MapPosition{10, 9},
-
-			MapPosition{11, 9},
-			MapPosition{12, 9},
-			MapPosition{13, 9},
-
-			MapPosition{11, 10},
-			MapPosition{12, 10},
-			MapPosition{13, 10},
-
-			MapPosition{11, 11},
-			MapPosition{12, 11},
-			MapPosition{13, 11},
-
-			MapPosition{11, 12},
-			MapPosition{12, 12},
-			MapPosition{13, 12},
-		}),
-		NewCfgRoomData(6, []MapPosition{
-			MapPosition{9, 1},
-			MapPosition{10, 1},
-			MapPosition{11, 1},
-			MapPosition{12, 1},
-			MapPosition{13, 1},
-
-			MapPosition{9, 2},
-			MapPosition{10, 2},
-			MapPosition{11, 2},
-			MapPosition{12, 2},
-			MapPosition{13, 2},
-
-			MapPosition{9, 3},
-			MapPosition{10, 3},
-			MapPosition{11, 3},
-			MapPosition{12, 3},
-			MapPosition{13, 3},
-
-			MapPosition{9, 4},
-			MapPosition{10, 4},
-			MapPosition{11, 4},
-			MapPosition{12, 4},
-			MapPosition{13, 4},
-
-			MapPosition{9, 5},
-			MapPosition{10, 5},
-			MapPosition{11, 5},
-			MapPosition{12, 5},
-			MapPosition{13, 5},
-
-			MapPosition{9, 6},
-			MapPosition{10, 6},
-			MapPosition{11, 6},
-			MapPosition{12, 6},
-			MapPosition{13, 6},
-
-			MapPosition{9, 7},
-			MapPosition{10, 7},
-			MapPosition{11, 7},
-			MapPosition{12, 7},
-			MapPosition{13, 7},
-		}),
-		NewCfgRoomData(7, []MapPosition{
-			MapPosition{6, 4},
-			MapPosition{7, 4},
-			MapPosition{6, 5},
-			MapPosition{7, 5},
-		}),
-		NewCfgRoomData(8, []MapPosition{
-			MapPosition{11, 14},
-			MapPosition{12, 14},
-			MapPosition{13, 14},
-			MapPosition{11, 15},
-			MapPosition{13, 15},
-		}),
-		NewCfgRoomData(9, []MapPosition{
-			MapPosition{2, 1},
-			MapPosition{3, 1},
-			MapPosition{4, 1},
-			MapPosition{5, 1},
-			MapPosition{6, 1},
-			MapPosition{7, 1},
-
-			MapPosition{2, 2},
-			MapPosition{3, 2},
-			MapPosition{4, 2},
-			MapPosition{5, 2},
-			MapPosition{6, 2},
-			MapPosition{7, 2},
-
-			MapPosition{1, 3},
-			MapPosition{2, 3},
-			MapPosition{3, 3},
-			MapPosition{1, 4},
-			MapPosition{2, 4},
-			MapPosition{3, 4},
-			MapPosition{1, 5},
-			MapPosition{2, 5},
-			MapPosition{3, 5},
-		}),
+		NewCfgRoomData(4, room4),
+		NewCfgRoomData(5, room5),
+		NewCfgRoomData(6, room6),
+		NewCfgRoomData(7, room7),
+		NewCfgRoomData(8, room8),
+		NewCfgRoomData(9, room9),
 	}
 
 	return &MapConfig{
@@ -1045,11 +933,13 @@ func (g *Game) PlayerMove(player Player, direction Direction) error {
 		} else if g.PosEmptyInFuture(targetPos) {
 			log.Println("Will be empty - something moving away nothing in")
 		} else {
-			return errors.New("Is not empty and will not be empty")
+			// return errors.New("Is not empty and will not be empty")
 		}
 
 		if g.IsPlayer(targetPos) {
 			return errors.New("Player on field")
+		} else {
+
 		}
 
 	}
@@ -1631,6 +1521,7 @@ type Game struct {
 
 func (g *Game) IsEmpty(pos MapPosition) bool {
 	if !(g.IsDoor(pos) || g.IsBoulder(pos) || g.IsWall(pos) || g.IsPlayer(pos)) {
+		log.Println("Is states", g.IsDoor(pos), g.IsBoulder(pos), g.IsWall(pos), g.IsPlayer(pos))
 		return true
 	}
 	return false
