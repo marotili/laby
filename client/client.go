@@ -8,6 +8,7 @@ import (
 	// "fmt"
 	"github.com/banthar/Go-SDL/mixer"
 	"github.com/banthar/Go-SDL/sdl"
+	"github.com/banthar/Go-SDL/ttf"
 	// "github.com/0xe2-0x9a-0x9b/Go-SDL/ttf"
 	"github.com/banthar/gl"
 	"go/build"
@@ -32,7 +33,7 @@ type Player struct {
 }
 
 const (
-	screenWidth  = 1024
+	screenWidth  = 800
 	screenHeight = 768
 )
 
@@ -65,7 +66,7 @@ func main() {
 	log.SetFlags(log.Llongfile)
 	runtime.LockOSThread()
 
-	conn, err := net.Dial("tcp", ":8001")
+	conn, err := net.Dial("tcp", "129.27.19.194:8001")
 	if err != nil {
 		log.Fatal("No connection to server")
 		return
@@ -101,9 +102,9 @@ func main() {
 		log.Fatal(sdl.GetError())
 	}
 
-	// if ttf.Init() != 0 {
-	// 	log.Fatal(sdl.GetError())
-	// }
+	if ttf.Init() != 0 {
+		log.Fatal(sdl.GetError())
+	}
 
 	if p, err := build.Default.Import(basePkg, "", build.FindOnly); err == nil {
 		os.Chdir(p.Dir)
@@ -137,7 +138,24 @@ func main() {
 
 	log.Println("We are", player)
 
+	var music *mixer.Music
+	var font *ttf.Font
+
+	if music = mixer.LoadMUS("data/music.ogg"); music == nil {
+		log.Fatal(sdl.GetError())
+	}
+
+	mixer.ResumeMusic()
+	// music.PlayMusic(-1)
+
+	if font = ttf.OpenFont("data/font.otf", 32); font == nil {
+		log.Fatal(sdl.GetError())
+	}
+	textStart := ttf.RenderUTF8_Blended(font, "Hello", sdl.Color{0, 0, 0, 0})
+	spriteStart := NewSpriteFromSurface(textStart)
+
 	for running {
+		Clear()
 		for _, event := range PollEvents() {
 			switch e := event.(type) {
 			case *sdl.QuitEvent:
@@ -237,8 +255,11 @@ func main() {
 				log.Println(err)
 			}
 		}
+		RenderMap(player, renderData, clientGame)
 
-		RenderMap(renderData, clientGame)
+		if !gameStarted {
+			spriteStart.Draw(50, 50, 0, 1, true)
+		}
 
 		// TODO
 		// selfPlayer := game.Player(0)

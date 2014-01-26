@@ -208,7 +208,7 @@ func handleConnection(conn net.Conn) {
 			}
 
 			if numActions > 1 {
-				log.Fatal("Only one action per update supported")
+				// log.Fatal("Only one action per update supported")
 			}
 
 			for i := 0; i < numActions; i++ {
@@ -221,7 +221,7 @@ func handleConnection(conn net.Conn) {
 				actions = append(actions, action)
 			}
 
-			actionDenied := false
+			actionDenied := make([]bool, len(numActions))
 			if PlayerIsSynchronized(player) {
 				// log.Println(actions)
 				for _, action := range actions {

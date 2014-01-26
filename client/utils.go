@@ -129,6 +129,7 @@ func NewSpriteFromSurface(surface *sdl.Surface) *Sprite {
 }
 
 func (s *Sprite) Draw(x, y, angle, scale float32, blend bool) {
+	scale = scale
 	gl.Enable(gl.TEXTURE_2D)
 	gl.Disable(gl.COLOR_MATERIAL)
 	if blend {
@@ -158,6 +159,11 @@ func (s *Sprite) Draw(x, y, angle, scale float32, blend bool) {
 	gl.End()
 	gl.Disable(gl.TEXTURE_2D)
 	gl.Disable(gl.BLEND)
+}
+
+func Clear() {
+	gl.ClearColor(1, 1, 1, 1)
+	gl.Clear(gl.COLOR_BUFFER_BIT)
 }
 
 func LoadImageRGBA(path string) (*image.RGBA, error) {

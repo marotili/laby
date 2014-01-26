@@ -231,16 +231,18 @@ func LoadRenderData() *RenderData {
 }
 
 func ToWorldCoord(pos game.MapPosition) (float32, float32) {
-	worldCellSize := float32(64)
+	worldCellSize := tileSize
 	return float32(pos.X()) * worldCellSize, float32(pos.Y()) * worldCellSize
 }
 
 func FloatPosToWorldCoord(pos game.Position) (float32, float32) {
-	worldCellSize := float32(64)
+	worldCellSize := tileSize
 	return float32(pos.X()) * worldCellSize, float32(pos.Y()) * worldCellSize
 }
 
-func RenderMap(renderData *RenderData, g *game.Game) {
+var tileSize float32 = 0.8 * 64
+
+func RenderMap(player game.Player, renderData *RenderData, g *game.Game) {
 	wall := renderData.wallSprites.walls[0]
 	floor := renderData.floorSprites.floor
 	ghostStand := renderData.ghostSprites.animWalk
@@ -253,40 +255,60 @@ func RenderMap(renderData *RenderData, g *game.Game) {
 	triggerA := renderData.toolSprites.triggersA
 	triggerB := renderData.toolSprites.triggersB
 
+	offset := float32(tileSize / 2.0)
+	baseSize := float32(64)
+	scaleMod := tileSize / baseSize
+
 	for y := 0; y < g.Height(); y++ {
 		for x := 0; x < g.Width(); x++ {
 			pos := game.NewMapPosition(x, y)
 			wx, wy := ToWorldCoord(pos)
 			cell := g.Cell(pos)
 
+			if !g.PlayerCanSeeCell(player, pos) {
+				continue
+			}
+
 			if cell.IsWall() {
-				wall.Draw(wx+32, wy+32, 0, 1, false)
+				wall.Draw(wx+offset, wy+offset, 0, scaleMod*1, false)
 			} else {
-				floor.Draw(wx+32, wy+32, 0, 1, false)
+				floor.Draw(wx+offset, wy+offset, 0, scaleMod*1, false)
 			}
 		}
 	}
 
 	for pos, bannWall := range g.BannWalls() {
+		if !g.PlayerCanSeeBannWall(player, bannWall) {
+			continue
+		}
 		wx, wy := ToWorldCoord(pos)
-		bannWallSprite[bannWall.Type()].Draw(wx+32, wy+32, 0, 1, true)
+		bannWallSprite[bannWall.Type()].Draw(wx+offset, wy+offset, 0, scaleMod*1, true)
 	}
 
-	for _, boulder := range g.Boulders() {
+	for pos, boulder := range g.Boulders() {
+		if !g.PlayerCanSeeCell(player, pos) {
+			continue
+		}
 		renderPos := g.BoulderRenderPos(boulder)
 		wx, wy := FloatPosToWorldCoord(renderPos)
 
-		boulderSprite.Draw(wx+32, wy+32, 0, 1, true)
+		boulderSprite.Draw(wx+offset, wy+offset, 0, scaleMod*1, true)
 	}
 
 	for pos, door := range g.Doors() {
+		if !g.PlayerCanSeeDoor(player, door) {
+			continue
+		}
 		if door.IsClosed() {
 			wx, wy := ToWorldCoord(pos)
-			doorSprite.Draw(wx+32, wy+32, 0, 1, true)
+			doorSprite.Draw(wx+offset, wy+offset, 0, scaleMod*1, true)
 		}
 	}
 
 	for pos, trigger := range g.Triggers() {
+		if !g.PlayerCanSeeTrigger(player, trigger) {
+			continue
+		}
 		cell := g.Cell(pos)
 		if dir, err := cell.DirOfTrigger(trigger); err == nil {
 			wx, wy := ToWorldCoord(pos)
@@ -304,35 +326,38 @@ func RenderMap(renderData *RenderData, g *game.Game) {
 			}
 
 			if trigger.IsActive() {
-				triggerA.Draw(wx+32, wy+32, angle, 0.5, true)
+				triggerA.Draw(wx+offset, wy+offset, angle, scaleMod*0.5, true)
 			} else {
-				triggerB.Draw(wx+32, wy+32, angle, 0.5, true)
+				triggerB.Draw(wx+offset, wy+offset, angle, scaleMod*0.5, true)
 			}
 		}
 	}
 
-	for _, player := range g.Players() {
-		renderPos := g.PlayerRenderPos(player)
+	for _, otherPlayer := range g.Players() {
+		if otherPlayer != player && !g.PlayerCanSeeOtherPlayer(player) {
+			continue
+		}
+		renderPos := g.PlayerRenderPos(otherPlayer)
 		wx, wy := FloatPosToWorldCoord(renderPos)
-		if g.IsHuman(player) {
-			direction := g.PlayerDirection(player)
-			if g.PlayerIsWalking(player) {
+		if g.IsHuman(otherPlayer) {
+			direction := g.PlayerDirection(otherPlayer)
+			if g.PlayerIsWalking(otherPlayer) {
 				// log.Println(g.PlayerWalkFrame(player))
-				humanStand[direction][g.PlayerWalkFrame(player)].Draw(wx+32, wy+32, 0, 64/256.0, true)
-			} else if g.PlayerDoesAction(player) {
-				humanAction[direction][g.PlayerActionFrame(player)].Draw(wx+32, wy+32, 0, 64/256.0, true)
+				humanStand[direction][g.PlayerWalkFrame(otherPlayer)].Draw(wx+offset, wy+offset, 0, scaleMod*64/256.0, true)
+			} else if g.PlayerDoesAction(otherPlayer) {
+				humanAction[direction][g.PlayerActionFrame(otherPlayer)].Draw(wx+offset, wy+offset, 0, scaleMod*64/256.0, true)
 			} else {
-				humanStand[direction][0].Draw(wx+32, wy+32, 0, 64/256.0, true)
+				humanStand[direction][0].Draw(wx+offset, wy+offset, 0, scaleMod*64/256.0, true)
 			}
-		} else if g.IsGhost(player) {
-			direction := g.PlayerDirection(player)
-			if g.PlayerIsWalking(player) {
+		} else if g.IsGhost(otherPlayer) {
+			direction := g.PlayerDirection(otherPlayer)
+			if g.PlayerIsWalking(otherPlayer) {
 				// log.Println(g.PlayerWalkFrame(player))
-				ghostStand[direction][g.PlayerWalkFrame(player)].Draw(wx+32, wy+32, 0, 64/256.0, true)
+				ghostStand[direction][g.PlayerWalkFrame(otherPlayer)].Draw(wx+offset, wy+offset, 0, scaleMod*64/256.0, true)
 				// } else if g.PlayerDoesAction(player) {
 				// 	ghostAction[direction][g.PlayerActionFrame(player)].Draw(wx+32, wy+32, 0, 64/256.0, true)
 			} else {
-				ghostStand[direction][0].Draw(wx+32, wy+32, 0, 64/256.0, true)
+				ghostStand[direction][0].Draw(wx+offset, wy+offset, 0, scaleMod*64/256.0, true)
 			}
 		} else {
 			log.Fatal("To many players")

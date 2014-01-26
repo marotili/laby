@@ -52,6 +52,16 @@ func NewMapConfig() *MapConfig {
 		NewCfgBannWallData(4, NewMapPosition(4, 4), 3),
 	}
 
+	rooms := []CfgRoomData{
+		NewCfgRoomData(1, []MapPosition{
+			MapPosition{0, 0},
+			MapPosition{1, 1},
+			MapPosition{2, 2},
+			MapPosition{3, 3},
+			MapPosition{4, 4},
+		}),
+	}
+
 	return &MapConfig{
 		playerStartPos: []MapPosition{
 			MapPosition{5, 5},
@@ -76,6 +86,7 @@ func NewMapConfig() *MapConfig {
 		doorData:     doors,
 		boulderData:  boulders,
 		bannWallData: bannWalls,
+		roomData:     rooms,
 
 		rooms:     make(map[RoomID]*Room),
 		plates:    make(map[PlateID]*Plate),
@@ -253,6 +264,8 @@ func BuildGame(g *Game) {
 		GlobalConfig.bannWalls[bannWallData.id] = bannWall
 	}
 
+	GlobalConfig.rooms[1].isVisible = true
+
 	ConnectEverything(g)
 }
 
@@ -290,9 +303,9 @@ func ConnectEverything(g *Game) {
 	}
 }
 
-func (g *Game) CellIsVisible(pos MapPosition) bool {
-	return true
-}
+// func (g *Game) CellIsVisible(pos MapPosition) bool {
+// return true
+// }
 
 type Player int
 
@@ -734,8 +747,10 @@ func (g *Game) PlayerAction(player Player, direction Direction) error {
 
 		// is empty
 		if !g.IsEmpty(targetPos) {
-			// but something moves away from it
-			if g.PosEmptyInFuture(targetPos) {
+			if g.IsDoor(targetPos) && g.Door(targetPos).IsOpen() {
+				// door is open
+			} else if g.PosEmptyInFuture(targetPos) {
+				// but something moves away from it
 			} else {
 				return errors.New("Is not empty and will not be empty")
 			}
@@ -766,16 +781,54 @@ type PlayerCans struct {
 }
 
 type PlayerVis struct {
-	visDoor    map[*Door]bool
-	visTrigger map[*Trigger]bool
-	visCell    map[MapPosition]bool
+	visDoor     map[*Door]bool
+	visTrigger  map[*Trigger]bool
+	visCell     map[MapPosition]bool
+	visBannWall map[*BannWall]bool
+}
+
+func (g *Game) PlayerCanSeeOtherPlayer(player Player) bool {
+	return false
+}
+
+func (g *Game) PlayerCanSeeCell(player Player, pos MapPosition) bool {
+	return g.playerVis[player].visCell[pos]
+}
+
+func (g *Game) PlayerCanSeeTrigger(player Player, t *Trigger) bool {
+	trigPos := NewMapPosition(-1, -1)
+	for pos, trig := range g.triggers {
+		if trig == t {
+			trigPos = pos
+		}
+	}
+	return g.playerVis[player].visTrigger[t] && g.PlayerCanSeeCell(player, trigPos)
+}
+func (g *Game) PlayerCanSeeDoor(player Player, d *Door) bool {
+	trigPos := NewMapPosition(-1, -1)
+	for pos, trig := range g.doors {
+		if trig == d {
+			trigPos = pos
+		}
+	}
+	return g.playerVis[player].visDoor[d] && g.PlayerCanSeeCell(player, trigPos)
+}
+func (g *Game) PlayerCanSeeBannWall(player Player, bw *BannWall) bool {
+	trigPos := NewMapPosition(-1, -1)
+	for pos, bw2 := range g.bannWalls {
+		if bw2 == bw {
+			trigPos = pos
+		}
+	}
+	return g.playerVis[player].visBannWall[bw] && g.PlayerCanSeeCell(player, trigPos)
 }
 
 func NewPlayerVis() *PlayerVis {
 	return &PlayerVis{
-		visDoor:    make(map[*Door]bool),
-		visTrigger: make(map[*Trigger]bool),
-		visCell:    make(map[MapPosition]bool),
+		visDoor:     make(map[*Door]bool),
+		visTrigger:  make(map[*Trigger]bool),
+		visCell:     make(map[MapPosition]bool),
+		visBannWall: make(map[*BannWall]bool),
 	}
 }
 
@@ -1361,6 +1414,22 @@ func (g *Game) NewPlayer(id int) Player {
 		}
 	}
 
+	for _, room := range g.rooms {
+		if room.isVisible {
+			for _, cellPos := range room.cells {
+				g.playerVis[player].visCell[cellPos] = true
+			}
+		}
+	}
+
+	for _, bw := range g.bannWalls {
+		if g.IsHuman(player) {
+			g.playerVis[player].visBannWall[bw] = false
+		} else if g.IsGhost(player) {
+			g.playerVis[player].visBannWall[bw] = false
+		}
+	}
+
 	for _, boulder := range g.boulders {
 		if g.IsHuman(player) {
 			g.playerCans[player].canPassBoulder[boulder] = false
@@ -1372,6 +1441,7 @@ func (g *Game) NewPlayer(id int) Player {
 
 	for _, trigger := range g.triggers {
 		if g.IsHuman(player) {
+			g.playerVis[player].visTrigger[trigger] = false
 		} else if g.IsGhost(player) {
 			g.playerCans[player].canTrigger[trigger] = true
 		}
