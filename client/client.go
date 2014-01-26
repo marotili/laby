@@ -34,7 +34,7 @@ type Player struct {
 
 const (
 	screenWidth  = 800
-	screenHeight = 768
+	screenHeight = 900
 )
 
 // type Game interface {
@@ -187,7 +187,7 @@ func main() {
 		clientGame.Update(t)
 
 		if len(playerActions) > 1 {
-			log.Fatal("Sending multiple actions not supported")
+			// log.Fatal("Sending multiple actions not supported")
 		}
 
 		if !gameStarted {
@@ -210,18 +210,21 @@ func main() {
 		// send user input to server
 
 		// log.Println("Send new actions")
-		enc.Encode(game.ClientReqSendAction)
-		enc.Encode(len(playerActions))
+		filteredActions := make([]game.ActionType, 0)
 		for _, action := range playerActions {
+			enc.Encode(game.ClientReqSendAction)
+			enc.Encode(1)
 			enc.Encode(action)
-		}
-		var serverResp game.ServerResponse
-		dec.Decode(&serverResp)
-		if serverResp != game.ServerActionOk {
-			log.Println("server action not ok", serverResp)
-			// drop actions
-			// log.Println("Dropped actions")
-			playerActions = make([]game.ActionType, 0)
+
+			var serverResp game.ServerResponse
+			dec.Decode(&serverResp)
+			if serverResp != game.ServerActionOk {
+				log.Println("server action not ok", serverResp)
+				// drop actions
+				// log.Println("Dropped actions")
+			} else {
+				filteredActions = append(filteredActions, action)
+			}
 		}
 
 		// now fetch input from other users

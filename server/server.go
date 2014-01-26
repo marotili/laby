@@ -221,7 +221,7 @@ func handleConnection(conn net.Conn) {
 				actions = append(actions, action)
 			}
 
-			actionDenied := make([]bool, len(numActions))
+			actionDenied := false
 			if PlayerIsSynchronized(player) {
 				// log.Println(actions)
 				for _, action := range actions {

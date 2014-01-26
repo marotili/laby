@@ -4,28 +4,20 @@ Laby
 Quick Start
 -----------
 
-Checkout, build and install the game:
-
-    go get github.com/fruhwirth-marco/laby
-
-Start the server:
-
-Start the game:
-
-    laby
-
-![screen](/fruhwirth-marco/lecture-hall-games/raw/master/artwork/screen01.png)
+![screen](/fruhwirth-marco/lecture-hall-games/raw/master/artwork/screenshot.png)
 
 
 Authors
 -------
 
  * Marco Fruhwirth (Development)
+ * Anna Prem (Graphics)
+ * Michael List (Graphics)
+ * Stefan Putzinger (Music)
+ * Patrick Kesselherz (Management, Game design)
 
 
 License
 -------
+    All source files are distributed under the Simplified BSD License. The audio files and graphics are licensed under Creative Commons Attribution-NonCommercial-ShareAlike 3.0 license.
 
-> All source files are distributed under the Simplified BSD License. The audio
-> files and graphics are licensed under Creative Commons
-> Attribution-NonCommercial-ShareAlike 3.0 license.

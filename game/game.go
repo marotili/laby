@@ -10,74 +10,427 @@ import (
 	"time"
 )
 
+const Ghost Player = Player(1)
+const Human Player = Player(0)
+const GhostOrHuman Player = Player(-1)
+
 func NewMapConfig() *MapConfig {
 	walls := []MapPosition{
-		NewMapPosition(0, 0),
-		NewMapPosition(1, 0),
-		NewMapPosition(2, 0),
-		NewMapPosition(3, 0),
-		NewMapPosition(4, 0),
-		NewMapPosition(5, 0),
-		NewMapPosition(6, 0),
+		MapPosition{0, 0},
+		MapPosition{0, 1},
+		MapPosition{0, 2},
+		MapPosition{0, 3},
+		MapPosition{0, 4},
+		MapPosition{0, 5},
+		MapPosition{0, 6},
+		MapPosition{0, 7},
+		MapPosition{0, 8},
+		MapPosition{0, 9},
+		MapPosition{0, 10},
+		MapPosition{0, 11},
+		MapPosition{0, 12},
+		MapPosition{0, 13},
+		MapPosition{0, 14},
+		MapPosition{0, 15},
+		MapPosition{0, 16},
 
-		NewMapPosition(5, 8),
-		NewMapPosition(3, 8),
+		MapPosition{1, 0},
+		MapPosition{2, 0},
+		MapPosition{3, 0},
+		MapPosition{4, 0},
+		MapPosition{5, 0},
+		MapPosition{6, 0},
+		MapPosition{7, 0},
+		MapPosition{8, 0},
+		MapPosition{9, 0},
+		MapPosition{10, 0},
+		MapPosition{11, 0},
+		MapPosition{12, 0},
+		MapPosition{13, 0},
+		MapPosition{14, 0},
 
-		NewMapPosition(12, 8),
-		NewMapPosition(12, 10),
+		MapPosition{14, 0},
+		MapPosition{14, 1},
+		MapPosition{14, 2},
+		MapPosition{14, 3},
+		MapPosition{14, 4},
+		MapPosition{14, 5},
+		MapPosition{14, 6},
+		MapPosition{14, 7},
+		MapPosition{14, 8},
+		MapPosition{14, 9},
+		MapPosition{14, 10},
+		MapPosition{14, 11},
+		MapPosition{14, 12},
+		MapPosition{14, 13},
+		MapPosition{14, 14},
+		MapPosition{14, 15},
+		MapPosition{14, 16},
+
+		MapPosition{1, 16},
+		MapPosition{2, 16},
+		MapPosition{3, 16},
+		MapPosition{4, 16},
+		MapPosition{5, 16},
+		MapPosition{6, 16},
+		MapPosition{7, 16},
+		MapPosition{8, 16},
+		MapPosition{9, 16},
+		MapPosition{10, 16},
+		MapPosition{11, 16},
+		MapPosition{12, 16},
+		MapPosition{13, 16},
+
+		MapPosition{1, 1},
+		MapPosition{1, 2},
+		MapPosition{1, 4},
+		MapPosition{1, 5},
+		MapPosition{1, 6},
+		MapPosition{2, 6},
+		MapPosition{3, 6},
+		MapPosition{4, 6},
+		MapPosition{5, 6},
+		MapPosition{6, 6},
+		MapPosition{7, 6},
+		MapPosition{8, 6},
+		MapPosition{8, 4},
+		MapPosition{8, 3},
+		MapPosition{8, 2},
+		MapPosition{8, 1},
+
+		MapPosition{8, 7},
+		MapPosition{8, 8},
+		MapPosition{8, 9},
+		MapPosition{8, 10},
+		MapPosition{8, 12},
+		MapPosition{8, 13},
+
+		MapPosition{8, 13},
+		MapPosition{7, 13},
+		MapPosition{6, 13},
+		MapPosition{5, 13},
+		MapPosition{3, 13},
+		MapPosition{1, 13},
+
+		MapPosition{1, 12},
+		MapPosition{1, 11},
+
+		MapPosition{3, 12},
+		MapPosition{3, 11},
+
+		MapPosition{5, 12},
+		MapPosition{5, 11},
+
+		MapPosition{6, 14},
+		MapPosition{6, 15},
+
+		MapPosition{9, 10},
+		MapPosition{10, 10},
+
+		MapPosition{10, 11},
+		MapPosition{10, 12},
+		MapPosition{10, 13},
+		MapPosition{10, 15},
+
+		MapPosition{11, 13},
+		MapPosition{13, 13},
+		MapPosition{12, 15},
+
+		MapPosition{9, 8},
+		MapPosition{11, 8},
+		MapPosition{12, 8},
+		MapPosition{13, 8},
+
+		MapPosition{5, 5},
+		MapPosition{5, 4},
+		MapPosition{5, 3},
+
+		MapPosition{7, 3},
+
+		MapPosition{3, 14},
+		MapPosition{3, 15},
 	}
 
 	triggers := []CfgTriggerData{
 		// triggerID doorID bannID
-		NewCfgTriggerData(1, 2, -1, NewMapPosition(2, 1), DirNorth),
+		NewCfgTriggerData(1, 2, -1, NewMapPosition(4, 15), DirSouth, Human, GhostOrHuman),
+		NewCfgTriggerData(2, 1, -1, NewMapPosition(2, 15), DirEast, Ghost, GhostOrHuman),
+		// boulder drop
+		NewCfgTriggerData(3, -1, -1, NewMapPosition(7, 12), DirEast, Human, GhostOrHuman), // x1
+		NewCfgTriggerData(5, 6, -1, NewMapPosition(11, 12), DirEast, Human, Ghost),        // g4
+		NewCfgTriggerData(6, 5, -1, NewMapPosition(13, 11), DirWest, Ghost, GhostOrHuman), // g5
+		NewCfgTriggerData(7, 7, -1, NewMapPosition(13, 5), DirEast, Human, GhostOrHuman),
+
+		// inactive
+		NewCfgTriggerData(8, -1, -1, NewMapPosition(13, 1), DirNorth, Ghost, Human),
+
+		NewCfgTriggerData(9, -1, -1, NewMapPosition(2, 1), DirNorth, Human, Ghost),
+		NewCfgTriggerData(10, -1, -1, NewMapPosition(2, 5), DirSouth, GhostOrHuman, Human),
+		NewCfgTriggerData(11, -1, -1, NewMapPosition(7, 1), DirEast, Human, GhostOrHuman),
+
+		NewCfgTriggerData(12, -1, -1, NewMapPosition(8, 15), DirSouth, Ghost, Human),
 	}
 
 	plates := []CfgPlateData{
-		NewCfgPlateData(1, 1, -1, NewMapPosition(14, 10)),
+		NewCfgPlateData(1, -1, -1, NewMapPosition(1, 10)),
+		NewCfgPlateData(1, 3, -1, NewMapPosition(7, 7)),
 	}
 
 	doors := []CfgDoorData{
-		NewCfgDoorData(1, -1, NewMapPosition(4, 8)),
-		NewCfgDoorData(2, -1, NewMapPosition(12, 9)),
+		NewCfgDoorData(1, 3, NewMapPosition(2, 13)),
+		NewCfgDoorData(2, 3, NewMapPosition(4, 13)),
+		NewCfgDoorData(3, 4, NewMapPosition(8, 11)),
+		NewCfgDoorData(4, 5, NewMapPosition(10, 14)), /// t4
+		NewCfgDoorData(5, 7, NewMapPosition(12, 13)), // t5
+		NewCfgDoorData(6, 6, NewMapPosition(10, 8)),  // t6
+		NewCfgDoorData(7, 8, NewMapPosition(8, 5)),
+		NewCfgDoorData(8, 9, NewMapPosition(3, 6)),
+		NewCfgDoorData(9, -1, NewMapPosition(1, 3)),
 	}
 
 	boulders := []CfgBoulderData{
-		NewCfgBoulderData(1, NewMapPosition(7, 7)),
+		NewCfgBoulderData(1, true, NewMapPosition(4, 12)),
+		NewCfgBoulderData(1, false, NewMapPosition(4, 12)),
 	}
 
 	bannWalls := []CfgBannWallData{
-		NewCfgBannWallData(1, NewMapPosition(3, 3), 0),
-		NewCfgBannWallData(2, NewMapPosition(4, 3), 1),
-		NewCfgBannWallData(3, NewMapPosition(3, 4), 2),
-		NewCfgBannWallData(4, NewMapPosition(4, 4), 3),
+		NewCfgBannWallData(1, NewMapPosition(3, 1), 0),
+		NewCfgBannWallData(2, NewMapPosition(4, 1), 1),
+		NewCfgBannWallData(3, NewMapPosition(3, 2), 2),
+		NewCfgBannWallData(4, NewMapPosition(4, 2), 3),
+
+		NewCfgBannWallData(5, NewMapPosition(5, 1), 0),
+		NewCfgBannWallData(6, NewMapPosition(6, 1), 1),
+		NewCfgBannWallData(7, NewMapPosition(5, 2), 2),
+		NewCfgBannWallData(8, NewMapPosition(6, 2), 3),
+
+		NewCfgBannWallData(9, NewMapPosition(3, 3), 0),
+		NewCfgBannWallData(10, NewMapPosition(4, 3), 1),
+		NewCfgBannWallData(11, NewMapPosition(3, 4), 2),
+		NewCfgBannWallData(13, NewMapPosition(4, 4), 3),
 	}
 
 	rooms := []CfgRoomData{
 		NewCfgRoomData(1, []MapPosition{
-			MapPosition{0, 0},
-			MapPosition{1, 1},
+			MapPosition{0, 16},
+			MapPosition{1, 16},
+			MapPosition{2, 16},
+			MapPosition{3, 16},
+
+			MapPosition{0, 15},
+			MapPosition{1, 15},
+			MapPosition{2, 15},
+			MapPosition{3, 15},
+
+			MapPosition{0, 14},
+			MapPosition{1, 14},
+			MapPosition{2, 14},
+			MapPosition{3, 14},
+
+			MapPosition{0, 13},
+			MapPosition{1, 13},
+			MapPosition{2, 13},
+			MapPosition{3, 13},
+		}),
+
+		NewCfgRoomData(2, []MapPosition{
+			MapPosition{0 + 3, 16},
+			MapPosition{1 + 3, 16},
+			MapPosition{2 + 3, 16},
+			MapPosition{3 + 3, 16},
+
+			MapPosition{0 + 3, 15},
+			MapPosition{1 + 3, 15},
+			MapPosition{2 + 3, 15},
+			MapPosition{3 + 3, 15},
+
+			MapPosition{0 + 3, 14},
+			MapPosition{1 + 3, 14},
+			MapPosition{2 + 3, 14},
+			MapPosition{3 + 3, 14},
+
+			MapPosition{0 + 3, 13},
+			MapPosition{1 + 3, 13},
+			MapPosition{2 + 3, 13},
+			MapPosition{3 + 3, 13},
+		}),
+
+		NewCfgRoomData(3, []MapPosition{
+			MapPosition{1, 7},
+			MapPosition{2, 7},
+			MapPosition{3, 7},
+			MapPosition{4, 7},
+			MapPosition{5, 7},
+			MapPosition{6, 7},
+			MapPosition{7, 7},
+
+			MapPosition{1, 8},
+			MapPosition{2, 8},
+			MapPosition{3, 8},
+			MapPosition{4, 8},
+			MapPosition{5, 8},
+			MapPosition{6, 8},
+			MapPosition{7, 8},
+
+			MapPosition{1, 9},
+			MapPosition{2, 9},
+			MapPosition{3, 9},
+			MapPosition{4, 9},
+			MapPosition{5, 9},
+			MapPosition{6, 9},
+			MapPosition{7, 9},
+
+			MapPosition{1, 10},
+			MapPosition{2, 10},
+			MapPosition{3, 10},
+			MapPosition{4, 10},
+			MapPosition{5, 10},
+			MapPosition{6, 10},
+			MapPosition{7, 10},
+
+			MapPosition{2, 11},
+			MapPosition{4, 11},
+			MapPosition{6, 11},
+			MapPosition{7, 11},
+
+			MapPosition{2, 12},
+			MapPosition{4, 12},
+			MapPosition{6, 12},
+			MapPosition{7, 12},
+		}),
+
+		NewCfgRoomData(4, []MapPosition{
+			MapPosition{7, 14},
+			MapPosition{8, 14},
+			MapPosition{9, 14},
+
+			MapPosition{7, 15},
+			MapPosition{8, 15},
+			MapPosition{9, 15},
+
+			MapPosition{9, 11},
+			MapPosition{9, 12},
+			MapPosition{9, 13},
+		}),
+		NewCfgRoomData(5, []MapPosition{
+			MapPosition{9, 9},
+			MapPosition{10, 9},
+
+			MapPosition{11, 9},
+			MapPosition{12, 9},
+			MapPosition{13, 9},
+
+			MapPosition{11, 10},
+			MapPosition{12, 10},
+			MapPosition{13, 10},
+
+			MapPosition{11, 11},
+			MapPosition{12, 11},
+			MapPosition{13, 11},
+
+			MapPosition{11, 12},
+			MapPosition{12, 12},
+			MapPosition{13, 12},
+		}),
+		NewCfgRoomData(6, []MapPosition{
+			MapPosition{9, 1},
+			MapPosition{10, 1},
+			MapPosition{11, 1},
+			MapPosition{12, 1},
+			MapPosition{13, 1},
+
+			MapPosition{9, 2},
+			MapPosition{10, 2},
+			MapPosition{11, 2},
+			MapPosition{12, 2},
+			MapPosition{13, 2},
+
+			MapPosition{9, 3},
+			MapPosition{10, 3},
+			MapPosition{11, 3},
+			MapPosition{12, 3},
+			MapPosition{13, 3},
+
+			MapPosition{9, 4},
+			MapPosition{10, 4},
+			MapPosition{11, 4},
+			MapPosition{12, 4},
+			MapPosition{13, 4},
+
+			MapPosition{9, 5},
+			MapPosition{10, 5},
+			MapPosition{11, 5},
+			MapPosition{12, 5},
+			MapPosition{13, 5},
+
+			MapPosition{9, 6},
+			MapPosition{10, 6},
+			MapPosition{11, 6},
+			MapPosition{12, 6},
+			MapPosition{13, 6},
+
+			MapPosition{9, 7},
+			MapPosition{10, 7},
+			MapPosition{11, 7},
+			MapPosition{12, 7},
+			MapPosition{13, 7},
+		}),
+		NewCfgRoomData(7, []MapPosition{
+			MapPosition{6, 4},
+			MapPosition{7, 4},
+			MapPosition{6, 5},
+			MapPosition{7, 5},
+		}),
+		NewCfgRoomData(8, []MapPosition{
+			MapPosition{11, 14},
+			MapPosition{12, 14},
+			MapPosition{13, 14},
+			MapPosition{11, 15},
+			MapPosition{13, 15},
+		}),
+		NewCfgRoomData(9, []MapPosition{
+			MapPosition{2, 1},
+			MapPosition{3, 1},
+			MapPosition{4, 1},
+			MapPosition{5, 1},
+			MapPosition{6, 1},
+			MapPosition{7, 1},
+
 			MapPosition{2, 2},
+			MapPosition{3, 2},
+			MapPosition{4, 2},
+			MapPosition{5, 2},
+			MapPosition{6, 2},
+			MapPosition{7, 2},
+
+			MapPosition{1, 3},
+			MapPosition{2, 3},
 			MapPosition{3, 3},
-			MapPosition{4, 4},
+			MapPosition{1, 4},
+			MapPosition{2, 4},
+			MapPosition{3, 4},
+			MapPosition{1, 5},
+			MapPosition{2, 5},
+			MapPosition{3, 5},
 		}),
 	}
 
 	return &MapConfig{
 		playerStartPos: []MapPosition{
-			MapPosition{5, 5},
-			MapPosition{4, 4},
+			MapPosition{5, 15},
+			MapPosition{1, 15},
 		},
 		playerStartLook: []Direction{
 			DirEast,
 			DirWest,
 		},
 
-		walkTime:   300 * time.Millisecond,
-		rollTime:   300 * time.Millisecond,
-		actionTime: 300 * time.Millisecond,
+		walkTime:   200 * time.Millisecond,
+		rollTime:   200 * time.Millisecond,
+		actionTime: 200 * time.Millisecond,
 
-		mapWidth:  16,
-		mapHeight: 16,
+		mapWidth:  15,
+		mapHeight: 17,
 
 		walls: walls,
 
@@ -120,6 +473,8 @@ type CfgTriggerData struct {
 	targetBannWall BannWallID
 	pos            MapPosition
 	dir            Direction
+	canTrigger     Player
+	canVis         Player
 }
 
 type CfgPlateData struct {
@@ -141,8 +496,9 @@ type CfgRoomData struct {
 }
 
 type CfgBoulderData struct {
-	id  BoulderID
-	pos MapPosition
+	id      BoulderID
+	pos     MapPosition
+	spawned bool
 }
 
 type CfgBannWallData struct {
@@ -159,20 +515,23 @@ func NewCfgBannWallData(id BannWallID, pos MapPosition, bannWallType int) CfgBan
 	}
 }
 
-func NewCfgBoulderData(id BoulderID, pos MapPosition) CfgBoulderData {
+func NewCfgBoulderData(id BoulderID, spawned bool, pos MapPosition) CfgBoulderData {
 	return CfgBoulderData{
-		id:  id,
-		pos: pos,
+		id:      id,
+		pos:     pos,
+		spawned: spawned,
 	}
 }
 
-func NewCfgTriggerData(id TriggerID, door DoorID, bannWall BannWallID, pos MapPosition, dir Direction) CfgTriggerData {
+func NewCfgTriggerData(id TriggerID, door DoorID, bannWall BannWallID, pos MapPosition, dir Direction, canTrigger Player, canVis Player) CfgTriggerData {
 	return CfgTriggerData{
 		id:             id,
 		targetDoor:     door,
 		pos:            pos,
 		dir:            dir,
 		targetBannWall: bannWall,
+		canTrigger:     canTrigger,
+		canVis:         canVis,
 	}
 }
 
@@ -245,7 +604,7 @@ func BuildGame(g *Game) {
 	}
 
 	for _, triggerData := range GlobalConfig.triggerData {
-		trigger := g.SetTrigger(triggerData.pos, triggerData.dir)
+		trigger := g.SetTrigger(triggerData.pos, triggerData.dir, triggerData.canTrigger, triggerData.canVis)
 		GlobalConfig.triggers[triggerData.id] = trigger
 	}
 
@@ -265,6 +624,7 @@ func BuildGame(g *Game) {
 	}
 
 	GlobalConfig.rooms[1].isVisible = true
+	GlobalConfig.rooms[2].isVisible = true
 
 	ConnectEverything(g)
 }
@@ -330,6 +690,22 @@ type Door struct {
 	linkedRoom *Room
 }
 
+func (g *Game) ToggleDoor(d *Door) {
+	if d.isOpen {
+		// d.linkedRoom.isVisible = false
+		d.isOpen = false
+	} else {
+		log.Println(d.linkedRoom)
+		d.linkedRoom.isVisible = true
+		for _, player := range g.players {
+			for _, cellPos := range d.linkedRoom.cells {
+				g.playerVis[player].visCell[cellPos] = true
+			}
+		}
+		d.isOpen = true
+	}
+}
+
 func (d *Door) IsOpen() bool {
 	return d.isOpen
 }
@@ -350,19 +726,24 @@ type Trigger struct {
 	linkedDoor     *Door
 	linkedBannWall *BannWall
 	needsTrigger   *Trigger
+
+	canTrigger Player
+	canVis     Player
 }
 
 func (t *Trigger) IsActive() bool {
 	return t.isActive
 }
 
-func NewTrigger() *Trigger {
+func NewTrigger(canTrigger, canVis Player) *Trigger {
 	return &Trigger{
 		isActive:       false,
 		staysActive:    0,
 		linkedDoor:     nil,
 		linkedBannWall: nil,
 		needsTrigger:   nil,
+		canTrigger:     canTrigger,
+		canVis:         canVis,
 	}
 }
 
@@ -499,8 +880,8 @@ func (m *Map) NeighborOfCell(pos MapPosition, direction Direction) *Cell {
 	return m.Cell(pos.Neighbor(direction))
 }
 
-func (g *Game) SetTrigger(pos MapPosition, direction Direction) *Trigger {
-	t := NewTrigger()
+func (g *Game) SetTrigger(pos MapPosition, direction Direction, canTrigger, canVis Player) *Trigger {
+	t := NewTrigger(canTrigger, canVis)
 	g.triggers[pos] = t
 	cell := g.gameMap.Cell(pos)
 	cell.accessibleTriggers[direction] = t
@@ -685,7 +1066,7 @@ func (g *Game) ActivateTrigger(player Player, trigger *Trigger) {
 
 	if trigger.linkedDoor != nil {
 		log.Println("Door toogled")
-		trigger.linkedDoor.isOpen = !trigger.linkedDoor.isOpen
+		g.ToggleDoor(trigger.linkedDoor)
 	}
 
 	if trigger.linkedBannWall != nil {
@@ -1422,6 +1803,10 @@ func (g *Game) NewPlayer(id int) Player {
 		}
 	}
 
+	for _, door := range g.doors {
+		g.playerVis[player].visDoor[door] = true
+	}
+
 	for _, bw := range g.bannWalls {
 		if g.IsHuman(player) {
 			g.playerVis[player].visBannWall[bw] = false
@@ -1440,10 +1825,16 @@ func (g *Game) NewPlayer(id int) Player {
 	}
 
 	for _, trigger := range g.triggers {
-		if g.IsHuman(player) {
-			g.playerVis[player].visTrigger[trigger] = false
-		} else if g.IsGhost(player) {
+		if trigger.canTrigger == GhostOrHuman || player == trigger.canTrigger {
 			g.playerCans[player].canTrigger[trigger] = true
+		} else {
+			g.playerCans[player].canTrigger[trigger] = false
+		}
+
+		if trigger.canVis == GhostOrHuman || player == trigger.canVis {
+			g.playerVis[player].visTrigger[trigger] = true
+		} else {
+			g.playerVis[player].visTrigger[trigger] = false
 		}
 	}
 

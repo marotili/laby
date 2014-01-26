@@ -187,6 +187,19 @@ func (kla *KeyLongAction) Update(inputS *InputState, dt time.Duration) (ActionTy
 		case KeyS:
 			return ActionMoveSouth, true, next // action ok
 		}
+	} else if inputS.game.PlayerIsWalking(inputS.player) {
+		var action ActionType = ActionNoAction
+		switch kla.key {
+		case KeyA:
+			action = ActionLookWest
+		case KeyW:
+			action = ActionLookNorth
+		case KeyD:
+			action = ActionLookEast
+		case KeyS:
+			action = ActionLookSouth
+		}
+		return action, true, kla
 	}
 
 	return ActionNoAction, true, kla // keep action
@@ -211,17 +224,25 @@ func (is *InputState) HandleEvent(e *sdl.KeyboardEvent) {
 	if e.Type == sdl.KEYDOWN {
 		switch e.Keysym.Sym {
 		case sdl.K_a:
+			// if !(is.KeyDown(KeyS) || is.KeyDown(KeyW) || is.KeyDown(KeyD)) {
 			is.SetKeyDown(KeyA)
 			is.AddAction(NewKeyShortAction(KeyA))
+			// }
 		case sdl.K_w:
+			// if !(is.KeyDown(KeyA) || is.KeyDown(KeyS) || is.KeyDown(KeyD)) {
 			is.SetKeyDown(KeyW)
 			is.AddAction(NewKeyShortAction(KeyW))
+			// }
 		case sdl.K_d:
+			// if !(is.KeyDown(KeyA) || is.KeyDown(KeyW) || is.KeyDown(KeyS)) {
 			is.SetKeyDown(KeyD)
 			is.AddAction(NewKeyShortAction(KeyD))
+			// }
 		case sdl.K_s:
+			// if !(is.KeyDown(KeyA) || is.KeyDown(KeyW) || is.KeyDown(KeyD)) {
 			is.SetKeyDown(KeyS)
 			is.AddAction(NewKeyShortAction(KeyS))
+			// }
 		case sdl.K_SPACE:
 			is.SetKeyDown(KeySpace)
 			is.AddAction(NewSpaceAction())
