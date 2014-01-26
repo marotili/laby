@@ -10,11 +10,11 @@ Quick Start
 Authors
 -------
 
- * Marco Fruhwirth (Development)
  * Anna Prem (Graphics)
  * Michael List (Graphics)
  * Stefan Putzinger (Music)
  * Patrick Kesselherz (Management, Game design)
+ * Marco Fruhwirth (Development)
 
 
 License
