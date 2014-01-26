@@ -298,8 +298,8 @@ func RenderMap(player game.Player, renderData *RenderData, g *game.Game) {
 		}
 	}
 
-	for pos, _ := range g.Plates() {
-		if !g.PlayerCanSeeCell(player, pos) {
+	for pos, plate := range g.Plates() {
+		if !g.PlayerCanSeePlate(player, plate) { // || player == game.Player(game.Human) {
 			continue
 		}
 		wx, wy := ToWorldCoord(pos)

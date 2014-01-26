@@ -1844,7 +1844,7 @@ func (g *Game) SetBannWall(pos MapPosition, bannWallType int) *BannWall {
 }
 
 func (g *Game) IsHuman(player Player) bool {
-	if int(player) == 0 {
+	if player == Player(Human) {
 		return true
 	} else {
 		return false
