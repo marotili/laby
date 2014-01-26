@@ -138,21 +138,21 @@ func main() {
 
 	log.Println("We are", player)
 
-	var music *mixer.Music
-	var font *ttf.Font
+	// var music *mixer.Music
+	// var font *ttf.Font
 
-	if music = mixer.LoadMUS("data/music.ogg"); music == nil {
-		log.Fatal(sdl.GetError())
-	}
+	// if music = mixer.LoadMUS("data/music.ogg"); music == nil {
+	// log.Fatal(sdl.GetError())
+	// }
 
 	mixer.ResumeMusic()
 	// music.PlayMusic(-1)
 
-	if font = ttf.OpenFont("data/font.otf", 32); font == nil {
-		log.Fatal(sdl.GetError())
-	}
-	textStart := ttf.RenderUTF8_Blended(font, "Hello", sdl.Color{0, 0, 0, 0})
-	spriteStart := NewSpriteFromSurface(textStart)
+	// if font = ttf.OpenFont("data/font.otf", 32); font == nil {
+	// 	log.Fatal(sdl.GetError())
+	// }
+	// textStart := ttf.RenderUTF8_Blended(font, "Hello", sdl.Color{0, 0, 0, 0})
+	// spriteStart := NewSpriteFromSurface(textStart)
 
 	for running {
 		Clear()
@@ -220,8 +220,6 @@ func main() {
 			dec.Decode(&serverResp)
 			if serverResp != game.ServerActionOk {
 				log.Println("server action not ok", serverResp)
-				// drop actions
-				// log.Println("Dropped actions")
 			} else {
 				filteredActions = append(filteredActions, action)
 			}
@@ -250,7 +248,7 @@ func main() {
 			}
 		}
 
-		data[player] = playerActions
+		data[player] = filteredActions
 		for thePlayer, actions := range data {
 			for _, action := range actions {
 				log.Println("Perform action from player", thePlayer, action)
@@ -261,7 +259,7 @@ func main() {
 		RenderMap(player, renderData, clientGame)
 
 		if !gameStarted {
-			spriteStart.Draw(50, 50, 0, 1, true)
+			// spriteStart.Draw(50, 50, 0, 1, true)
 		}
 
 		// TODO

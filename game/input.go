@@ -2,6 +2,7 @@ package game
 
 import (
 	"github.com/banthar/Go-SDL/sdl"
+	"log"
 	"time"
 )
 
@@ -173,7 +174,8 @@ func (kla *KeyLongAction) Update(inputS *InputState, dt time.Duration) (ActionTy
 		next := NewKeyLongAction(kla.key, 0) // restart action - pulses every keyLongTimeDown ms
 
 		target := inputS.game.playerState[inputS.player].mapPos.Neighbor(dir)
-		if inputS.game.IsBoulder(target) {
+		if inputS.game.IsBoulder(target) && inputS.game.Boulders()[target].IsActive() {
+			log.Println("active boulder here")
 			return ActionAction, true, next
 		}
 

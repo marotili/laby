@@ -23,9 +23,12 @@ type WallSprites struct {
 
 type FloorSprites struct {
 	floor   *Sprite
+	floor2  *Sprite
 	boulder *Sprite
 	door    *Sprite
 	ban     []*Sprite
+	plate0  *Sprite
+	ban2    *Sprite
 }
 
 type ToolSprites struct {
@@ -34,12 +37,12 @@ type ToolSprites struct {
 }
 
 func LoadToolSprites() *ToolSprites {
-	triggerSpriteA, err := NewSprite("data/trigger0.png", 128, 128)
+	triggerSpriteA, err := NewSprite("data/lever0_on.png", 128, 128)
 	if err != nil {
 		log.Fatal("Could not open trigger file")
 	}
 
-	triggerSpriteB, err := NewSprite("data/trigger1.png", 128, 128)
+	triggerSpriteB, err := NewSprite("data/lever0_off.png", 128, 128)
 	if err != nil {
 		log.Fatal("Could not open trigger file")
 	}
@@ -56,12 +59,17 @@ func LoadFloorSprites() *FloorSprites {
 		log.Fatal("Could not open floor tile")
 	}
 
+	floorSprite2, err := NewSprite("data/000 GAME JAM/boden.png", 64, 64)
+	if err != nil {
+		log.Fatal("Could not open steinboden")
+	}
+
 	boulderSprite, err := NewSprite("data/floor/boulder.png", 64, 64)
 	if err != nil {
 		log.Fatal("Could not open boulder tile")
 	}
 
-	doorSprite, err := NewSprite("data/floor/door.png", 64, 64)
+	doorSprite, err := NewSprite("data/000 GAME JAM/door.png", 64, 64)
 	if err != nil {
 		log.Fatal("Could not open boulder tile")
 	}
@@ -74,11 +82,17 @@ func LoadFloorSprites() *FloorSprites {
 		}
 	}
 
+	ban2Sprite, _ := NewSprite("data/Bannkreis.png", 64, 64)
+	plate0, _ := NewSprite("data/000 GAME JAM/Druckplatte_stein.png", 64, 64)
+
 	return &FloorSprites{
 		floor:   floorSprite,
+		floor2:  floorSprite2,
 		boulder: boulderSprite,
 		door:    doorSprite,
 		ban:     banSprites,
+		ban2:    ban2Sprite,
+		plate0:  plate0,
 	}
 }
 
@@ -245,6 +259,7 @@ var tileSize float32 = 0.8 * 64
 func RenderMap(player game.Player, renderData *RenderData, g *game.Game) {
 	wall := renderData.wallSprites.walls[0]
 	floor := renderData.floorSprites.floor
+	floor2 := renderData.floorSprites.floor2
 	ghostStand := renderData.ghostSprites.animWalk
 	// ghostAction := renderData.ghostSprites.animAction
 	humanStand := renderData.humanSprites.animWalk
@@ -254,6 +269,8 @@ func RenderMap(player game.Player, renderData *RenderData, g *game.Game) {
 	doorSprite := renderData.floorSprites.door
 	triggerA := renderData.toolSprites.triggersA
 	triggerB := renderData.toolSprites.triggersB
+
+	plateSprite := renderData.floorSprites.plate0
 
 	offset := float32(tileSize / 2.0)
 	baseSize := float32(64)
@@ -272,9 +289,21 @@ func RenderMap(player game.Player, renderData *RenderData, g *game.Game) {
 			if cell.IsWall() {
 				wall.Draw(wx+offset, wy+offset, 0, scaleMod*1, false)
 			} else {
-				floor.Draw(wx+offset, wy+offset, 0, scaleMod*1, false)
+				if x+y%2 == 0 {
+					floor.Draw(wx+offset, wy+offset, 0, scaleMod*1, false)
+				} else {
+					floor2.Draw(wx+offset, wy+offset, 0, scaleMod*1, false)
+				}
 			}
 		}
+	}
+
+	for pos, _ := range g.Plates() {
+		if !g.PlayerCanSeeCell(player, pos) {
+			continue
+		}
+		wx, wy := ToWorldCoord(pos)
+		plateSprite.Draw(wx+offset, wy+offset, 0, scaleMod*1, true)
 	}
 
 	for pos, bannWall := range g.BannWalls() {
@@ -285,8 +314,8 @@ func RenderMap(player game.Player, renderData *RenderData, g *game.Game) {
 		bannWallSprite[bannWall.Type()].Draw(wx+offset, wy+offset, 0, scaleMod*1, true)
 	}
 
-	for pos, boulder := range g.Boulders() {
-		if !g.PlayerCanSeeCell(player, pos) {
+	for _, boulder := range g.Boulders() {
+		if !g.PlayerCanSeeBoulder(player, boulder) {
 			continue
 		}
 		renderPos := g.BoulderRenderPos(boulder)
